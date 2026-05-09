@@ -1,0 +1,34 @@
+## Project
+
+This is a full-stack FYP Management System. Full spec is in INSTRUCTIONS.md.
+Always read INSTRUCTIONS.md before starting any task.
+
+## Code Style
+
+- Use async/await, never callbacks
+- Always wrap controllers in try/catch
+- Standard API response: { success, data, message }
+- Use HTTP status codes correctly (200, 201, 400, 401, 403, 404, 500)
+- Never return password fields in API responses
+
+## Sequelize
+
+- Always use associations (hasMany, belongsTo) — never raw JOIN queries
+- Never write raw SQL with user input
+
+## React
+
+- Use React Hook Form + Zod for all forms
+- Use TanStack Query for all server state
+- Never use useEffect to fetch data
+
+## Security
+
+- Every route except /api/auth/\* must verify JWT
+- Always validate file type and size on upload
+- Never expose .env values to the frontend
+
+## General
+
+- Comment complex business logic
+- Ask before making architectural decisions not covered in INSTRUCTIONS.md

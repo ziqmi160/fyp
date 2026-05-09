@@ -1,0 +1,936 @@
+4th Edition
+
+PROJECT ADMINISTRATION 4th Edition
+Editors
+Norjansalika Janom Zolidah Kasiran
+
+EC Front Pages.indd 3
+
+Faculty of Computer and Mathematical Sciences Universiti Teknologi MARA 2022
+2/10/2020 10:45:05 AM
+
+First Printing 2014
+� Faculty of Computer and Mathematical Sciences Second Edition 2015 Third Printing 2016 Fourth Printing 2017 Fifth Printing 2018 Sixth Printing 2019 Seventh Printing 2020
+
+All rights reserved. No part of this publication may be reproduced, copied, stored in any retrieval system or transmitted in any form or by any means - electronic, mechanical, photocopying, recording or otherwise, without prior permission in writing from the Dean, Faculty of Computer and Mathematical Sciences, Universiti Teknologi MArA, 40450 Shah Alam, Selangor Darul Ehsan, Malaysia. e-mail: dekan@fskm.uitm.edu.my
+
+Perpustakaan Negara Malaysia
+
+Cataloguing-in-Publication Data
+
+Essentials of Computing Sciences : Project Administration / Editors Norjansalika Janom, Zolidah Kasiran - Second Edition ISBN 978-967-0171-50-0 1. Computer software--Development--Handbooks, manuals, etc. 2. Electronic data processing--Handbooks, manuals, etc. 3. Electronic data processing documentation--Handbooks, manuals, etc. I. Norjansalika Janom. II. Zolidah Kasiran. III. Universiti Teknologi MArA. Fakulti Sains Komputer dan Matematik. 005.15
+
+Printed in Malaysia by :
+
+Percetakan Info Meditasi Sdn. Bhd. No. 25, Jalan Balakong Jaya 1, Taman Industri Balakong Jaya 43300 Balakong, Selangor Darul Ehsan Tel: 03-8964 1252 Faks: 03-8964 1258 e-mel: infomeditasi@gmail.com
+
+EC Front Pages.indd 4
+
+2/6/2020 2:05:55 PM
+
+Editorial Board
+Aishah Ahmad@Abd Mutalib (Associate Professor) Fakariah Hani Mohd Ali (Dr.) Marina Yusoff (Dr.)
+Nor Shahniza Kamal Bashah (Dr.) Nur Atiqah Sia Abdullah (Dr.)
+Shuzlina Abdul Rahman (Associate Professor Dr.) Mudiana Mokhsin @ Misron Wan Nor Amalina Wan Hariri
+v
+
+Acknowledgement
+We wish to acknowledge the contributions of the following academic staff from the Universiti Teknologi MARA Malaysia during the preliminary draft of this book:
+Azlinah Hj. Mohamed (Professor Dr. Hajah) Nursuriati Jamil (Professor Dr.) Sharifah Lailee Syed Abdullah (Associate Professor Dr.) Zaidah Ibrahim (Associate Professor) Emma Nuraihan Mior Ibrahim (Dr.) Hamidah Jantan (Dr.) Hasiah Mohamed (Dr.) Mesliza Mohamed (Dr.) Sharifalillah Nordin (Dr.) Siti Salwa Salleh (Dr.) Suriyani Ariffin (Associate Professor Dr.) Syaripah Ruzaini Syed Aris (Dr.) Illiasaak Ahmad Mohd Yunus Mohd Yussof (Associate Professor Dr ) Anis Shobirin Abdullah Sani Alya @ Geogiana Anak Buja (Dr) Azliza Mohd Ali (Dr) Faridah Sappar Itaza Afiani Mohtar Juliana Hamka Kamaroddin (Dr) Masurah Mohamad Nor Azila Awang Abu Bakar Nor Diana Ahmad Nor Nadiah Yusof Nor Shahida Mohamad Yusop (Dr) Norkhushaini Awang Rosdiana Abd Razak Rozianawaty Osman (Dr) Syafnidar Abdul Halim Zamzulani Mohamed Zarina Zainol
+
+Preface
+In the Universiti Teknologi MARA Malaysia, the Bachelor Degree programmes of the Computing Sciences discipline typically end with a final year project. This final year project is the capstone of each Bachelor Degree programme as it builds and tests the knowledge and skills acquired throughout the scholastic sessions. In addition, this project contributes as an essential part of the training towards becoming a professional. This book presents the essentials of the Computing Sciences project administration. Its aim is to meet the administrative formalities and procedural needs of students who are embarking on the formulation stage of their final year project, through to project completion. Several categories of readers may benefit from the content of this book as it provides important information pertaining to the Computing Sciences department requirements. The categories include the student who undertakes the project, the supervisor who supervises the project, the examiner of the project, the lecturer who conducts the project courses, and the coordinator who is responsible for managing the project exhibition for the Computing Sciences discipline.
+ix
+
+Table of Contents
+
+Editorial Board
+
+v
+
+Acknowledgement
+
+vii
+
+Preface
+
+ix
+
+Table of Contents
+
+xi
+
+List of Tables ...........................................................................................................................................xiii
+
+List of Abbreviations
+
+xiv
+
+List of Forms and Evaluation Rubrics
+
+xv
+
+Chapter 1 ........................................................................................................................................1
+
+1.1 Introduction ........................................................................................................................1
+
+1.2 Objective ..........................................................................................................................1
+
+1.3 Structure ...........................................................................................................................1
+
+Chapter 2 ........................................................................................................................................3
+
+2.1 Project Formulation Administration Process ........................................................................3
+
+2.1.1 Process for the Lecturer ...........................................................................................3
+
+2.1.2 Process Workflow for the Lecturer ...........................................................................5
+
+2.1.3 Process for the Student ............................................................................................9
+
+2.1.4 Process Workflow for the Student ..........................................................................10
+
+2.2 Project Administration Process..........................................................................................12
+
+2.2.1 Process for the Lecturer .........................................................................................12
+
+2.2.2 Process Workflow for the Lecturer .........................................................................14
+
+2.2.3 Process for the Student ..........................................................................................18
+
+2.2.4 Process Workflow for the Student ..........................................................................20
+
+Chapter 3 ......................................................................................................................................23
+
+3.1 Overview ........................................................................................................................23
+
+3.2 Report Format...................................................................................................................23
+
+3.2.1 Language and Report Length.................................................................................23
+
+3.2.2 Printing
+
+....................................................................................................... 23
+
+3.2.3 Typeface, Typing Quality and Font Size.................................................................23
+
+3.2.4 Equations .......................................................................................................24
+
+3.2.5 Tables
+
+............................................................................................................... 24
+
+3.2.6 Figures
+
+....................................................................................................... 25
+
+3.3 Arrangement and Contents....................................................................................................26
+
+3.3.1 Arrangement .........................................................................................................26
+
+3.3.2 Cover and Spine ....................................................................................................26
+
+3.3.3 Title Page..............................................................................................................27
+
+xi
+
+3.3.4 Supervisor Approval..............................................................................................27 3.3.5 Student Declaration ...............................................................................................27 3.3.6 Acknowledgement.................................................................................................27 3.3.7 Abstract ...............................................................................................................28 3.3.8 Table of Contents and List of Figures/Tables/Abbreviation ....................................28 3.3.9 Body of the Text ............................................................................................................ 28 3.3.10 References ............................................................................................................29 3.4 Poster Format ...................................................................................................................29 Frequently Asked Questions (FAQs) for Student ............................................................................31 Frequently Asked Questions (FAQs) for Lecturer...........................................................................33 Appendices ...................................................................................................................................35 Appendix A: Sample for Format of Cover and Spine ...................................................................37 Appendix B: Sample for Format of Title Page .............................................................................38 Appendix C: Sample for Supervisor Approval ............................................................................39 Appendix D: Sample for Student Declaration ..............................................................................40 Appendix E: Sample for Acknowledgement ................................................................................41 Appendix F: Sample for Abstract................................................................................................42 Appendix G: Sample for Table of Contents..................................................................................43 Appendix H: Sample for List of Figures ......................................................................................45 Appendix I: Sample for List of Tables ............................................................................................... 46 Appendix J: Sample for List of Abbreviations ............................................................................47 Appendix K: Sample for Body of Report .....................................................................................48 Appendix L: Sample of References Using American Psychological Association (APA) Format 49 Appendix M: FYP Report Checklist ............................................................................................56 Appendix N: Selection of Main Supervisor /Co- Supervisor.........................................................57 Appendix O: Lean Model Canvas ................................................................................................57 Glossary ........................................................................................................................................ 59 Forms & Evaluation Rubrics .........................................................................................................59 Research Ethics .............................................................................................................................59
+xi
+
+List of Tables
+
+Page
+
+Table 2.1 Administration Process for the Lecturer During the Project Formulation and
+
+3
+
+Project Course ....................................................................................................
+
+Table 2.2 Administration Workflow for the Lecturer During the Project Formulation and
+
+Project Course.....................................................................................................
+
+7
+
+Table 2.3 Administration Process Undertaken by the Student During the Project
+
+Formulation and Project Course.........................................................................
+
+15
+
+Table 2.4 Administration Workflow for the Student During the Project Formulation and Project Course..................................................................................................... 18
+
+xiii
+
+List of Abbreviations
+
+FYP CSP600 CSP650 MAF FAQ ATP OBE RES SIMS
+
+Final Year Project Course code for Project Formulation Course code for Project Mutual Acceptance Form Frequently Asked Question Amanah Tugas Pensyarah Outcome Based Education Result Examination System Student Information Management System
+
+xiv
+
+List of Forms and Evaluation Rubrics
+
+F1 F2 F3 F4 F5 F6(a) F6(b) F7 F8 F9 F10 F11 F12 F13 F14 F15 F16
+
+Mutual Acceptance Form Project Motivation Form Literature Review Evaluation Form Methodology Evaluation Form Proposal/Project In-Progress Form Project Formulation Report Submission Form Project Report Submission Form Project Formulation Presentation Form Project Formulation Evaluation Form Project Progress Project Presentation Form Final Project Presentation Form Final Report Evaluation Form Project Confirmation of Correction Form Business Model Evaluation Form Special Evaluation Qualification Form Special Evaluation Presentation Form Special Evaluation Report Form
+
+Chapter 1
+Aim
+To provide an overview of the Bachelor Degree of Computing Sciences final year project.
+1.1 Introduction
+A final year project is different from a traditional course in terms of its size, its goals, and its form of supervision, communication and examination. It represents a substantially larger workload than that expected of a single course. While a single course traditionally focuses on the student acquiring knowledge in a specific subject area through lectures and laboratory work, the final year project focuses on deepening the student's understanding of a subject area. Moreover, it provides the student with the training to conduct the project independently using a sound and structured approach. For a successful completion of a Bachelor Degree in the Computing Sciences discipline, the student must complete the required courses, prepare a project proposal for examination and conduct research work that culminates in an examination of a final year project report with an oral presentation of the results. It is to this capstone of a Bachelor Degree programme that the final year project cultivates the development of a student towards becoming an independent and critical-thinking individual.
+1.2 Objective
+The book focuses on the final year project within the Computing Sciences discipline. It provides informative materials to both the lecturer and the student in planning, organizing and managing the project towards its successful completion. The contents of the book enable the lecturer and the student to comprehend the administrative process and to apply the report guidelines involved in undertaking a project of this nature.
+1.3 Structure
+The book is structured into two main sections: (i) the formulation and submission of the project proposal, and (ii) the execution of the proposed project towards completion. For each section, the administrative process and workflow are provided for both the lecturer and the student. The project examination criteria can be discerned from the forms and rubrics that are provided in the appendices as a guide for the lecturer and the student. In addition, the forms provided in the appendices are detachable for use.
+1
+
+Chapter 2
+
+Aim
+To provide the administrative process and workflow on the formalities and procedural needs of the Bachelor Degree of Computing Sciences final year project (FYP).
+
+2.1 Project Formulation and Project Administration Process
+There are two main sections in this chapter: Project Formulation and Project. The Project Formulation section pertains to a course, of the same name, undertaken by the students in the fifth semester of their undergraduate programme. The Project section relates to a course, of the same name, undertaken by the students in their sixth semester of their bachelor programme. The roles and responsibilities of the lecturer and student are explained herewith.
+
+2.2 Process for the Lecturer
+
+Table 2.1 shows the responsibilities and actions undertaken by the lecturer during the Project Formulation and Project course.
+
+Table 2.1 Administration Process for the Lecturer During the Project Formulation and Project Course
+
+Responsibility Project Formulation Lecturer
+
+Project Formulation
+Action
+1. Explain the following core course structure to the students:  Roles of student, supervisor / Co-Supervisor, examiner, Project Formulation lecturer  Purpose of forms  Evaluation rubrics  Division of marks/assessment
+(Refer to appendix N for Selection of Supervisors)
+2. Acquire the student list according to the program.
+3. Provide instructions on the preparation of the project proposal.
+4. Provide a list of previous project titles for student reference.
+5. Provide a list of the lecturers' areas of specialization.
+6. Inform the students to seek potential supervisors.
+7. Instruct the students to complete and submit the following forms:  Mutual Acceptance Form (F1)  Project Motivation Evaluation Form (F2)
+
+Supervisor/Co-Supervisor
+
+8. Discuss and confirm the project title with the potential student.
+
+2
+
+Essentials of Computing Sciences Project Administration
+
+Responsibility Supervisor/Co-Supervisor
+Project Formulation Lecturer
+Project Formulation Lecturer Project Formulation Lecturer, Supervisor & Examiner Supervisor & Examiner Lecturer Supervisor & Examiner
+Project Formulation Lecturer
+
+Table 2.1 (Continued)
+Action 9. Guide the student in preparing the project proposal.
+10. Instruct the student to do the amendments (if any).
+11. Check and sign the Proposal/Project In-Progress Form (F5). 12. Instruct the students to complete and submit the following
+forms:  Literature Review Evaluation Form (F3)  Methodology Evaluation Form (F4)
+13. Conduct a session on Research Ethic
+14. Evaluate Literature Review Evaluation Form (F3) and Methodology Evaluation Form (F4).
+15. Monitor the student's project progress throughout the semester with the Proposal/Project In-Progress Form (F5).
+16. Create a student group account with an anti-plagiarism software.
+17. Instruct the students to screen the project formulation report with the anti-plagiarism software.
+18. Instruct the students to submit the Project Formulation Report and the Project Formulation Report Submission Form (F6(a)).
+19. Assign examiner for each student accordingly
+20. Plan Project Formulation Presentation session
+21. Distribute the proposal reports with the Project Formulation Report Evaluation Form (F8) to the supervisors and examiners.
+22. Evaluate the proposal through presentation using the Project Formulation Presentation Form (F7)
+23. Evaluate the report using Project Formulation Report Evaluation Form (F8)
+24. Instruct the students to do the amendments (if any).
+25. Instruct students to submit REC Forms as appropriate with the project proposal.
+26. Submit the Project Formulation Presentation Form (F7) and the Project Formulation Report Evaluation Form (F8) to the Project Formulation lecturer.
+27. Instruct the students to submit the amended proposal report.
+28. Record and upload the Project Formulation course marks into the Result Examination System (RES).
+29. Compile and submit the items listed below to the Project lecturer for the following semester:  The student project list  The amended proposal reports
+
+3
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.1 (continued)
+
+Responsibility Project Lecturer Supervisor/Co-Supervisor Project Lecturer
+Project Lecturer
+
+Project
+Action
+30. Explain the following core course structure to the students:  Roles of student, supervisor, Co-Supervisor, examiner, Project Lecturer  Forms used  Evaluation rubrics  Division of marks/assessment
+(Refer to appendix N for Roles of Supervisors)
+31. Acquire the student list according to the program.
+32. Provide instructions on the preparation of the FYP report according to the report guidelines.
+33. Provide continued supervision on the student project.
+34. Guide the student in preparing the FYP report.
+35. Monitor the student's project progress throughout the semester using the Proposal/Project In-Progress Form (F5).
+36. Instruct student to develop Lean Model Canvas (LMC)
+(Refer to Appendix O)
+37. Create student group account for anti-plagiarism detection software/system.
+38. Evaluate the submitted LMC using the LMC Evaluation Form (F13).
+39. Evaluate the project progress through presentation using the Project Progress Presentation Form (F9).
+40. Instruct the student to screen the FYP report with the anti-plagiarism software/system.
+41. Update the list of supervisors and examiners.
+42. Instruct the students to submit the FYP report with the Report Submission Form (F6(b)).
+43. Distribute the FYP reports, with the FinalProject Presentation Form F(10) and the Project Report Evaluation Form (F11) to the supervisors and examiners.
+
+Resource Person / Lecturer in Charge
+
+44. Plan and organize the FYP exhibition.
+
+4
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.1 (Continued)
+
+Responsibility
+
+Action
+
+Resource Person / Lecturer 45. Brief the students on the FYP exhibition. in Charge
+
+Supervisor & Examiner Supervisor
+
+46. Evaluate the FYP presentation, report and poster using the Final Project Presentation Form (F10) and the Project Report Evaluation Form (F11) .
+47. Submit the forms to the Project lecturer.
+48. Instruct the students to do the report amendments (if any) according to the report guidelines.
+49. Check the amended report and sign the Confirmation of Correction Form (F12).
+50. Sign the Supervisor Approval page in the student's final report.
+
+Project Lecturer
+
+51. Collect the following items from each student:  FYP report (including abstract and appendices) (in .pdf and .doc)  Presentation slides  All files related to the project development � Poster � Raw data (If Relevant) � System with test data (If Relevant) � Instructions on System Setup � .apk file / .exe file (If Relevant)
+52. Record and upload the Project course marks into the Result Examination System (RES).
+
+Lecturer
+
+53. Submit a set of the FYP reports to the faculty's Academic Affairs Office for archive as resource reference.
+
+5
+
+Essentials of Computing Sciences Project Administration
+
+2.1.1 Process Workflow for the Lecturer
+Table 2.2 shows the responsibilities, workflow, and work processes undertaken by the lecturer during the Project Formulation and Project course.
+
+Table 2.2 Administration Workflow for the Lecturer During the Project Formulation and Project Course
+
+Responsibility
+
+Workflow
+
+Project Formulation Work Process
+
+Source/Record
+
+Start
+
+Project Formulation Lecturer
+
+Explain the following core course structure to the students:  Roles of student, supervisor,
+examiner, Project Formulation lecturer  Purpose of forms  Evaluation rubrics  Division of marks/assessment
+
+Project Formulation course - Outcome Based Education (OBE) documents
+
+Acquire the student list according to the program.
+
+Student Information Management System (SIMS)
+
+Provide instructions on the preparation of the project proposal.
+
+Provide a list of previous project titles for student reference.
+
+FYP coordinator, previous Project Formulation lecturer's teaching portfolio
+
+Provide a list of the lecturers' areas of specialization.
+
+Faculty website
+
+1
+
+6
+
+Responsibility
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.2 (Continued)
+
+Workflow
+
+Work Process
+
+1
+
+Source/Record
+
+Project Formulation Lecturer
+
+Inform the students to seek potential supervisors. Instruct the students to complete and submit the F1 and F2 form.
+Discuss and confirm the project title with the potential student.
+
+Mutual Acceptance Form (F1) - 3 copies: Project Formulation lecturer, supervisor and student
+Project Motivation Evaluation Form (F2)
+
+Confirm acceptance of the supervision and sign the F1 form.
+
+Mutual Acceptance Form (F1)
+
+Supervisor
+
+Guide the student in preparing the project proposal.
+
+Instruct the student to do the amendments (if any).
+
+Project Formulation Lecturer
+
+Check and sign the F5 form.
+Instruct the students to complete and submit the following forms:
+ Literature Review Evaluation Form (F3)
+ Methodology Evaluation Form (F4)
+
+Proposal/Project In-Progress Form (F5)
+Literature Review Evaluation Form (F3) and Methodology Evaluation Form (F4)
+
+Conduct a session on Research
+
+Monitor the student's project progress throughout the semester with the F5 form.
+
+Proposal/Project In-Progress Form (F5)
+
+2
+
+7
+
+Responsibility
+
+Essentials of Computing Sciences Project Administration
+
+Workflow
+
+Table 2.2 (Continued) Work Process
+
+Source/Record
+
+2
+
+Project Formulation Lecturer
+Project Formulation Lecturer
+Project Formulation Lecturer, Supervisor & Examiner
+Supervisor & Examiner
+Project Formulation Lecturer
+
+Instruct the students to screen the proposal report with the antiplagiarism software.
+
+Anti-plagiarism software
+
+Instruct the students to submit copies of the proposal report and the F6(a) form.
+Assign examiner for each student accordingly
+
+Proposal report
+Project Formulation Submission Form (F6(a))
+
+Plan Project Formulation Presentation Session
+Distribute the proposal reports with the F8 form to the supervisors and examiners.
+
+Project Formulation Report Evaluation Form (F8)
+
+Evaluate the proposal through presentation using the F7 form.
+
+Project Formulation Presentation Form (F7)
+
+Evaluate the report using Project Formulation Report Evaluation Form (F8)
+Instruct the students to do the amendments (if any).
+
+Project Formulation Report Evaluation Form (F8)
+
+Supervisor & Examiner
+
+Submit the F7 and F8 forms to the Project Formulation
+
+Project Formulation lecturer.
+
+Presentation Form
+
+(F7)
+
+Project Formulation 3 Report Evaluation
+Form (F8)
+
+EC Chap 1&2.indd 8
+
+8/28/2015 3:54:07 PM
+
+Responsibility
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.2 (Continued)
+
+Workflow
+
+Work Process
+
+Source/Record
+
+3
+
+Instruct the students to submit the amended proposal report.
+
+Project Formulation Lecturer
+
+Record and upload the Project Formulation course marks into the Result Examination System (RES).
+
+Result Examination System (RES)
+
+Compile and submit the items listed below to the Project lecturer for the following semester:  The student project list  The amended proposal reports
+
+Teaching portfolio
+
+4
+
+EC Chap 1&2.indd 9
+
+8/28/2015 3:54:07 PM
+
+Essentials of Computing Sciences Project Administration
+
+Responsibility Project Lecturer
+
+Table 2.2 (Continued)
+
+Workflow
+
+Project Work Process
+
+Source/Record
+
+4
+
+Explain the following core course structure to the students:  Roles of student, supervisor,
+examiner, Project lecturer  Forms to be used  Evaluation rubrics  Division of marks/assessment
+(Refer to appendix N for Roles of Supervisors)
+
+Project course - Outcome Based Education (OBE) documents
+
+Acquire the student list according SIMS to the program.
+
+Provide instructions on the preparation of the FYP report according to the report guidelines.
+
+Appendices in Guidebook
+
+Supervisor Project Lecturer
+
+Provide continued supervision on the student project.
+
+Guide the student in preparing the FYP report.
+
+FYP Report Checklist (Appendix M)
+
+Monitor the student's project progress throughout the semester using the F5 form.
+
+Proposal/Project In-Progress Form (F5)
+
+Instruct student to develop Lean Model Canvas (LMC)
+
+Appendix O
+
+Instruct the student to screen the FYP report with the anti-plagiarism software.
+
+Anti-plagiarism software/system
+
+5 5
+
+EC Chap 1&2.indd 10
+
+Essentials of Computing Sciences Project Administration Table 2.2 (Continued)
+
+8/28/2015 3:54:07 PM
+
+Responsibility
+
+Workflow 5
+
+Work Process
+
+Source/Record
+
+Project Lecturer Supervisor
+
+Evaluate the submitted LMC using LMC Evaluation
+
+LMC Evaluation Form (F13)
+
+Form (F13)
+
+Evaluate the project progress through presentation using the F9 form.
+
+Project Progress Presentation Form (F9)
+
+Review the FYP report content and format.
+
+Appendix A-L
+
+Update the list of supervisors and List of supervisors
+
+examiners.
+
+and examiners
+
+Project Lecturer
+Resource Person/ FYP Coordinator
+
+Instruct the students to submit the Report Submission FYP report with the F6(b) Form. Form (F6(b))
+
+Distribute the FYP reports, with the F10 Form and the F11 Form, to the supervisors and examiners.
+
+Final Project Presentation Form (F10) Project Report Evaluation Form (F11)
+
+Plan and organize the FYP exhibition.
+
+Brief the students on the FYP exhibition.
+
+EC Chap 1&2.indd 11
+
+8/28/2015 3:54:07 PM
+
+Responsibility
+Supervisor & Examiner
+
+Workflow
+
+Table 2.2 (Continued) Work Process
+
+6
+
+Source/Record
+Final Project Presentation Form (F10)
+
+Evaluate the FYP presentation, report and poster using the F10 and F11 forms.
+Submit the forms to the Project lecturer.
+
+Project Evaluation Form (F11)
+FYP Report Checklist (Appendix N)
+
+Instruct the students to do the report amendments (if any) according to the report guidelines.
+
+Confirmation of Correction Form(F12)
+
+Check the amended report and sign the F12 form.
+
+7
+
+Supervisor
+EC Chap 1&2.indd 12
+
+Sign the Supervisor Approval page in the FYP report.
+Collect the following items from each student:  FYP report (including abstract
+and appendices)  Presentation slides  All files related to the project
+
+8/28/2015 3:54:07 PM
+
+Project Lecturer Project Lecturer
+
+development � Poster � Raw data (if any) � System with test data (if any) � Instructions on System Setup � .apk file / .exe file (if any)
+
+Record and upload the Project course marks into the RES.
+Submit the FYP reports to the faculty's Academic Affairs Office for archive as resource reference.
+End
+
+Result Examination System (RES)
+
+Essentials of Computing Sciences Project Administration
+
+2.3 Process for the Student
+Table 2.3 shows the responsibilities and actions to be taken by the student during the Project Formulation and Project course.
+Table 2.3 Administration Process Undertaken by the Student During the Project Formulation and Project Course
+
+Responsibility
+
+Project Formulation
+
+Action
+
+1. Register for the Project Formulation course.
+2. Identify the project area and proposal title
+3. Identify the potential project supervisor.
+4. Submit a copy of the completed Mutual Acceptance Form (F1) to the Project Formulation lecturer and the supervisor. The student is asked to keep a copy for reference. The form is to be signed by both the supervisor and the student.
+
+EC Chap 1&2.indd 13
+
+8/28/2015 3:54:07 PM
+
+Student
+
+5. Discuss the project proposal in detail with the supervisor and complete the Project Motivation Evaluation Form (F2).
+6. Submit the Project Motivation Evaluation Form (F2) to the Project Formulation lecturer for review.
+7. Submit Literature Review Evaluation Form (F3) and Methodology Evaluation Form (F4) to the Project Formulation lecturer for review.
+8. Apply for Ethical Approval (if necessary).
+9. Discuss the progress of the proposal through regular consultations with the supervisor and update the Proposal/Project In-Progress Form (F5) after each consultation.
+10. Present the progress of the proposal to the Project Formulation lecturer.
+11. Complete the proposal report according to the pre-specified format.
+12. Screen the proposal report with the anti-plagiarism software.
+13. Submit the proposal report and the F6(a) form to the Project Formulation lecturer.
+14. Present the proposal to the Project Formulation lecturer, examiner and the supervisor.
+15. Do the amendments on the proposal report based on the comments from the examiner and the supervisor.
+16. Submit the REC forms as appropriate with the proposal.
+17. Submit the amended proposal report to the Project Formulation lecturer.
+
+EC Chap 1&2.indd 14
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.3 (Continued)
+
+Responsibility
+
+Project
+
+Action
+
+18. Register for the Project course.
+19. Continue regular project consultations with the supervisor and update the Proposal/Project In-Progress Form (F5) for each consultation.
+20. Present the progress of the project to the supervisor and the Project lecturer.
+21. Prepare the FYP report according to the report guidelines.
+22. Submit Lean Model Canvas (LMC) to the Project lecturer for review.
+
+8/28/2015 3:54:07 PM
+
+Student
+
+23. Screen the FYP report with the anti-plagiarism software.
+24. Submit the FYP report and the Report Submission Form (F6(b)) to the Project lecturer (for the examiner and the supervisor).
+25. Attend the FYP exhibition briefing conducted by the FYP coordinator.
+26. Present the FYP to the:
+ Examiner
+ FYP exhibition committee members
+27. Do amendments to the FYP report based on the comments from the examiner and the supervisor.
+28. Submit the amended FYP report to the examiner for checking purposes and obtain the supervisor/examiner's signature on the Confirmation of Correction Form (F12).
+29. Obtain the supervisor's signature on the Supervisor Approval page in the FYP report.
+
+EC Chap 1&2.indd 15
+
+8/28/2015 3:54:07 PM
+
+Responsibility Student
+
+Essentials of Computing Sciences Project Administration
+Table 2.3 (Continued)
+Action
+32. Submit the following items to the Project lecturer:  FYP report (including abstract and appendices) (in .pdf and .doc)  Presentation slides  Poster  All files related to the project development � Raw data (If relevant) � System with test data (if any)
+
+EC Chap 1&2.indd 16
+
+8/28/2015 3:54:07 PM
+
+Essentials of Computing Sciences Project Administration
+
+2.1.2 Process Workflow for the Student
+Table 2.4 shows the responsibilities, workflow, and work processes undertaken by the student during the Project Formulation and Project course.
+
+Table 2.4 Administration Workflow for the Student During the Project Formulation and Project Course
+
+Responsibility
+
+Workflow
+
+Project Formulation Work Process
+
+Source/Record
+
+Start
+
+Register for the Project Formulation course.
+
+SIMS
+
+Identify the project area and proposal title.
+
+Identify the potential project supervisor.
+
+Student
+
+Submit a copy of the F1 form to the Project Formulation lecturer and the supervisor. The student is asked to keep a copy for reference. The form is to be signed by both the supervisor and the student.
+
+Mutual Acceptance Form (F1)
+
+Discuss the project proposal in detail with the supervisor and complete the F2 form.
+
+Project Motivation Evaluation Form (F2)
+
+Submit the F2 form to the Project Formulation lecturer for review.
+Submit Literature Review Evaluation Form (F3) and Methodology Evaluation Form (F4) to the Project Formulation lecturer for review.
+Apply for Ethical Approval (if necessary).
+
+Project Motivation Evaluation Form (F2)
+Literature Review Evaluation Form (F3) and Methodology Evaluation Form (F4)
+
+1
+
+EC Chap 1&2.indd 17
+
+8/28/2015 3:54:07 PM
+
+Responsibility Student
+
+Essentials of Computing Sciences Project Administration
+
+Workflow
+1
+
+Table 2.4 (Continued) Work Process
+
+Source/Record
+
+Present the project proposal for evaluation.
+
+Discuss the progress of the proposal through regular consultations with the supervisor and update the F5 form after each consultation.
+
+Proposal/Project In-Progress Form (F5)
+
+Present the progress of the proposal to the Project Formulation lecturer.
+
+Complete the proposal report according to the pre-specified format.
+Screen the proposal report with the anti-plagiarism software.
+
+Anti-plagiarism software
+
+Submit Business Model Canvas (BMC) to the Project lecturer for review.
+Submit TWO (2) copies of the proposal report and the F6(a) form to the Project Formulation lecturer.
+
+Proposal report
+Report Submission Form (F6(a))
+
+Present the proposal to the Project Formulation lecturer, examiner and the supervisor.
+
+Do the amendments on the proposal report based on the comments from the examiner and the supervisor.
+
+Submit the amended proposal report to the Project Formulation lecturer.
+
+Proposal report (amended)
+
+2
+
+EC Chap 1&2.indd 18
+
+8/28/2015 3:54:07 PM
+
+Responsibility
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.4 (Continued)
+
+Workflow
+
+Project Work Process
+
+3
+
+Register for the Project course.
+
+Source/Record SIMS
+
+Student
+
+Continue regular project consultations with the supervisor and update the F5 form for each consultation.
+
+Proposal/Project In-Progress Form (F5)
+
+Prepare Lean Model Canvas (LMC)
+
+Appendix O
+
+Present the progress of the project to the supervisor and the Project lecturer.
+
+Prepare the FYP report according Appendix A - L to the report guidelines.
+
+Screen the FYP report with the anti-plagiarism software.
+
+Anti-plagiarism software
+
+Submit TWO (2) copies of the FYP report and the F6(b) form to the Project lecturer.
+Attend the FYP exhibition briefing.
+
+Report Submission Form (F6(b))
+
+3
+
+EC Chap 1&2.indd 19
+
+8/28/2015 3:54:07 PM
+
+Responsibility
+
+Essentials of Computing Sciences Project Administration
+
+Workflow 3
+
+Table 2.4 (Continued) Work Process
+
+Source/Record
+
+Present the FYP to the:  Examiner  FYP exhibition committee
+members
+.
+
+.
+
+Student
+
+Complete the amendments to the FYP report based on the comments from the examiner and the supervisor.
+
+FYP Report Checklist (Appendix N)
+
+Submit the amended FYP report to Confirmation of
+
+the examiner for checking purposes Correction
+
+and obtain the examiner's signature on the F12 form.
+
+Form (F12)
+
+Obtain the supervisor's signature on the Supervisor Approval page in the FYP report.
+4
+
+EC Chap 1&2.indd 20
+
+8/28/2015 3:54:07 PM
+
+Responsibility
+
+Essentials of Computing Sciences Project Administration
+
+Table 2.4 (Continued)
+
+Workflow
+
+Work Process
+
+4
+
+Source/Record
+
+Submit the following items to the Project lecturer:  TWO (2) CD copies of the
+FYP report (for the FYP coordinator and the faculty's Academic Affairs Office)
+
+Sample for CD Cover and Label (Appendix M)
+
+Student
+
+Each CD should contain the following items:  FYP report (including abstract
+and appendices)  Presentation slides  All files related to the project
+development � Poster � Raw data � System with test data (if any)
+End
+
+EC Chap 1&2.indd 21
+
+8/28/2015 3:54:07 PM
+
+
