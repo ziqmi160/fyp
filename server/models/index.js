@@ -16,7 +16,8 @@ import EvaluationForm from './EvaluationForm.js';
 import PresentationSession from './PresentationSession.js';
 import PresentationSlot from './PresentationSlot.js';
 import Amendment from './Amendment.js';
-import ConsultationMeeting from './ConsultationMeeting.js';
+import ConsultationMeetingFactory from './ConsultationMeeting.js';
+const ConsultationMeeting = ConsultationMeetingFactory(sequelize);
 
 // User associations
 User.hasOne(StudentProfile, { foreignKey: 'user_id' });
