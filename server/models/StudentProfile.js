@@ -13,7 +13,7 @@ const StudentProfile = sequelize.define('StudentProfile', {
     unique: true,
     references: { model: 'users', key: 'id' }
   },
-  student_number: {
+  student_id: {
     type: DataTypes.STRING(20),
     allowNull: false,
     unique: true

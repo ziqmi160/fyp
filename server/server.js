@@ -24,6 +24,11 @@ import amendmentRoutes from './routes/amendments.js';
 import consultationRoutes from './routes/consultations.js';
 import reportDistributionRoutes from './routes/reportDistribution.js';
 import marksRoutes from './routes/marks.js';
+import resourceLibraryRoutes from './routes/resourceLibraryRoutes.js';
+import plagiarismCheckRoutes from './routes/plagiarismCheckRoutes.js';
+import ethicalApprovalRoutes from './routes/ethicalApprovalRoutes.js';
+import deliverableRoutes from './routes/deliverableRoutes.js';
+import exhibitionRoutes from './routes/exhibitionRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,6 +64,11 @@ app.use('/api/amendments', amendmentRoutes);
 app.use('/api/consultations', consultationRoutes);
 app.use('/api/report-distribution', reportDistributionRoutes);
 app.use('/api/marks', marksRoutes);
+app.use('/api/resource-library', resourceLibraryRoutes);
+app.use('/api/plagiarism-checks', plagiarismCheckRoutes);
+app.use('/api/ethical-approval', ethicalApprovalRoutes);
+app.use('/api/deliverables', deliverableRoutes);
+app.use('/api/exhibitions', exhibitionRoutes);
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

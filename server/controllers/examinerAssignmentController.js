@@ -18,7 +18,7 @@ export const getExaminerAssignments = async (req, res) => {
           attributes: ['id', 'name', 'email'],
           include: [{
             model: StudentProfile,
-            attributes: ['student_number', 'fyp_title']
+            attributes: ['student_id', 'fyp_title']
           }]
         },
         {
@@ -227,7 +227,7 @@ export const getMyExaminerAssignments = async (req, res) => {
           attributes: ['id', 'name', 'email'],
           include: [{
             model: StudentProfile,
-            attributes: ['student_number', 'fyp_title', 'current_phase']
+            attributes: ['student_id', 'fyp_title', 'current_phase']
           }]
         }
       ],

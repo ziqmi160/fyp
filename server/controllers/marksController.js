@@ -46,7 +46,7 @@ export const getStudentMarks = async (req, res) => {
         {
           model: StudentProfile,
           as: 'StudentProfile',
-          attributes: ['student_number', 'current_phase']
+          attributes: ['student_id', 'current_phase']
         }
       ],
       order: [['created_at', 'DESC']]
@@ -82,7 +82,7 @@ export const getConsolidatedMarks = async (req, res) => {
         {
           model: StudentProfile,
           as: 'StudentProfile',
-          attributes: ['student_number', 'current_phase']
+          attributes: ['student_id', 'current_phase']
         }
       ],
       order: [['student_id', 'ASC'], ['form_type', 'ASC']]
@@ -144,7 +144,7 @@ export const exportMarksReport = async (req, res) => {
         {
           model: StudentProfile,
           as: 'StudentProfile',
-          attributes: ['student_number', 'current_phase']
+          attributes: ['student_id', 'current_phase']
         }
       ],
       order: [['student_id', 'ASC'], ['form_type', 'ASC']]
@@ -155,7 +155,7 @@ export const exportMarksReport = async (req, res) => {
       const csvHeader = 'Student Number,Student Name,Form Type,Total Score,Max Score,Percentage,Evaluator,Evaluation Date\n';
       const csvData = evaluationForms.map(form => {
         const percentage = form.max_score > 0 ? ((form.total_score / form.max_score) * 100).toFixed(2) : '0';
-        return `${form.StudentProfile?.student_number || ''},"${form.student?.name || ''}",${form.form_type},${form.total_score || 0},${form.max_score || 0},${percentage}%,"${form.evaluator?.name || ''}",${form.created_at ? new Date(form.created_at).toLocaleDateString() : ''}`;
+        return `${form.StudentProfile?.student_id || ''},"${form.student?.name || ''}",${form.form_type},${form.total_score || 0},${form.max_score || 0},${percentage}%,"${form.evaluator?.name || ''}",${form.created_at ? new Date(form.created_at).toLocaleDateString() : ''}`;
       }).join('\n');
       
       res.setHeader('Content-Type', 'text/csv');

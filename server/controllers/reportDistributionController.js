@@ -36,7 +36,7 @@ export const getDistributedReports = async (req, res) => {
         {
           model: StudentProfile,
           as: 'StudentProfile',
-          attributes: ['student_number', 'current_phase']
+          attributes: ['student_id', 'current_phase']
         }
       ],
       order: [['submitted_at', 'DESC']]
@@ -105,7 +105,7 @@ export const distributeReport = async (req, res) => {
         {
           model: StudentProfile,
           as: 'StudentProfile',
-          attributes: ['student_number', 'current_phase']
+          attributes: ['student_id', 'current_phase']
         }
       ]
     });
@@ -139,7 +139,7 @@ export const getAvailableReports = async (req, res) => {
         {
           model: StudentProfile,
           as: 'StudentProfile',
-          attributes: ['student_number', 'current_phase']
+          attributes: ['student_id', 'current_phase']
         }
       ],
       order: [['submitted_at', 'DESC']]

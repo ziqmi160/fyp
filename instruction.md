@@ -110,7 +110,7 @@ created_at, updated_at
 ```
 id (PK)
 user_id (FK → users.id, UNIQUE)
-student_number (VARCHAR 20, UNIQUE)
+student_id (VARCHAR 20, UNIQUE)
 programme (VARCHAR 100)
 group_name (VARCHAR 10)           -- e.g. "CS5A"
 current_supervisor_id (FK → users.id, NULLABLE)

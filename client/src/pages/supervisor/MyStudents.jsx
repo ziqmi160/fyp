@@ -64,7 +64,7 @@ export default function MyStudents() {
             <div key={s.id} className="bg-card rounded-xl p-6 border shadow-sm flex flex-col justify-between">
               <div>
                 <h3 className="font-semibold text-secondary">{s.name}</h3>
-                <p className="text-sm text-gray-500">{s.student_number} • {s.programme}</p>
+                <p className="text-sm text-gray-500">{s.student_id} • {s.programme}</p>
                 <div className="mt-2 text-sm">
                   <span className="font-medium">Phase: </span>
                   <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">{s.current_phase || 'CSP600'}</span>

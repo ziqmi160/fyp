@@ -27,12 +27,12 @@ async function seed() {
     ]);
 
     await StudentProfile.bulkCreate([
-      { user_id: users[4].id, student_number: '2020123456', programme: 'CS230', group_name: 'CS5A', current_supervisor_id: users[1].id, fyp_title: 'AI-based Recommendation System', fyp_status: 'active' },
-      { user_id: users[5].id, student_number: '2020123457', programme: 'CS230', group_name: 'CS5A', current_supervisor_id: users[1].id, fyp_title: 'Machine Learning for Fraud Detection', fyp_status: 'active' },
-      { user_id: users[6].id, student_number: '2020123458', programme: 'CS230', group_name: 'CS5B', current_supervisor_id: users[2].id, fyp_title: 'Cloud-based E-commerce Platform', fyp_status: 'active' },
-      { user_id: users[7].id, student_number: '2020123459', programme: 'CS230', group_name: 'CS5B', current_supervisor_id: null, fyp_title: null, fyp_status: 'pending_approval' },
-      { user_id: users[8].id, student_number: '2020123460', programme: 'CS230', group_name: 'CS5C', current_supervisor_id: null, fyp_title: null, fyp_status: 'no_supervisor' },
-      { user_id: users[9].id, student_number: '2020123461', programme: 'CS230', group_name: 'CS5C', current_supervisor_id: users[2].id, fyp_title: 'Mobile App for Campus Services', fyp_status: 'completed' }
+      { user_id: users[4].id, student_id: '2020123456', programme: 'CS230', group_name: 'CS5A', current_supervisor_id: users[1].id, fyp_title: 'AI-based Recommendation System', fyp_status: 'active' },
+      { user_id: users[5].id, student_id: '2020123457', programme: 'CS230', group_name: 'CS5A', current_supervisor_id: users[1].id, fyp_title: 'Machine Learning for Fraud Detection', fyp_status: 'active' },
+      { user_id: users[6].id, student_id: '2020123458', programme: 'CS230', group_name: 'CS5B', current_supervisor_id: users[2].id, fyp_title: 'Cloud-based E-commerce Platform', fyp_status: 'active' },
+      { user_id: users[7].id, student_id: '2020123459', programme: 'CS230', group_name: 'CS5B', current_supervisor_id: null, fyp_title: null, fyp_status: 'pending_approval' },
+      { user_id: users[8].id, student_id: '2020123460', programme: 'CS230', group_name: 'CS5C', current_supervisor_id: null, fyp_title: null, fyp_status: 'no_supervisor' },
+      { user_id: users[9].id, student_id: '2020123461', programme: 'CS230', group_name: 'CS5C', current_supervisor_id: users[2].id, fyp_title: 'Mobile App for Campus Services', fyp_status: 'completed' }
     ]);
 
     await SupervisionRequest.bulkCreate([

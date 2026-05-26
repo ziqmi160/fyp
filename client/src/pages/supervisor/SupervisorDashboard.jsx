@@ -183,7 +183,7 @@ export default function SupervisorDashboard() {
                       <div>
                         <span className="font-medium">{assignment.student?.name}</span>
                         <span className="text-sm text-gray-500 block">
-                          {assignment.student?.StudentProfile?.student_number} • {assignment.phase}
+                          {assignment.student?.StudentProfile?.student_id} • {assignment.phase}
                         </span>
                       </div>
                       <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">

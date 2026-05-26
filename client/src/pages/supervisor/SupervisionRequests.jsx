@@ -72,7 +72,7 @@ export default function SupervisionRequests() {
               <tr key={r.id} className="border-t">
                 <td className="p-4">
                   <p className="font-medium">{r.student?.name}</p>
-                  <p className="text-sm text-gray-500">{r.student_profile?.student_number}</p>
+                  <p className="text-sm text-gray-500">{r.student_profile?.student_id}</p>
                 </td>
                 <td className="p-4">{r.title_proposed}</td>
                 <td className="p-4">{new Date(r.created_at).toLocaleDateString()}</td>

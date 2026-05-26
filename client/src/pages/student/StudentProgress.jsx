@@ -64,7 +64,7 @@ export default function StudentProgress() {
             <div>
               <p className="text-sm text-gray-500">Student</p>
               <p className="font-semibold">{studentProfile?.studentUser?.name}</p>
-              <p className="text-sm text-gray-600">{studentProfile?.student_number}</p>
+              <p className="text-sm text-gray-600">{studentProfile?.student_id}</p>
             </div>
           </div>
           

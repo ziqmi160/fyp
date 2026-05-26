@@ -109,7 +109,7 @@ export default function CoordinatorSchedules() {
                 <select name="student_id" required className="w-full px-4 py-2 border rounded-lg">
                   <option value="">Select Student</option>
                   {students.map(s => (
-                    <option key={s.user_id} value={s.user_id}>{s.name} ({s.student_number})</option>
+                    <option key={s.user_id} value={s.user_id}>{s.name} ({s.student_id})</option>
                   ))}
                 </select>
               </div>

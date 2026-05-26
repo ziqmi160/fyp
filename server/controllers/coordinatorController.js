@@ -113,7 +113,7 @@ export const getStudents = async (req, res) => {
       const s = search.toLowerCase();
       result = result.filter(r =>
         (r.name || '').toLowerCase().includes(s) ||
-        (r.student_number || '').toLowerCase().includes(s)
+        (r.student_id || '').toLowerCase().includes(s)
       );
     }
 
@@ -183,7 +183,7 @@ export const generateReport = async (req, res) => {
       students.forEach(s => {
         csv.push([
           userMap[s.user_id]?.name || '',
-          s.student_number || '',
+          s.student_id || '',
           s.programme || '',
           s.group_name || '',
           s.supervisor?.name || 'None',
@@ -210,7 +210,7 @@ export const generateReport = async (req, res) => {
       students.forEach(s => {
         csv.push([
           userMap[s.user_id]?.name || '',
-          s.student_number || '',
+          s.student_id || '',
           s.programme || '',
           s.group_name || '',
           userMap[s.user_id]?.email || ''

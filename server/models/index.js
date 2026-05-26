@@ -17,6 +17,12 @@ import PresentationSession from './PresentationSession.js';
 import PresentationSlot from './PresentationSlot.js';
 import Amendment from './Amendment.js';
 import ConsultationMeetingFactory from './ConsultationMeeting.js';
+import ResourceLibrary from './ResourceLibrary.js';
+import PlagiarismCheck from './PlagiarismCheck.js';
+import EthicalApproval from './EthicalApproval.js';
+import Deliverable from './Deliverable.js';
+import Exhibition from './Exhibition.js';
+import ExhibitionAttendance from './ExhibitionAttendance.js';
 const ConsultationMeeting = ConsultationMeetingFactory(sequelize);
 
 // User associations
@@ -45,8 +51,8 @@ User.hasMany(PresentationSession, { foreignKey: 'created_by' });
 User.hasMany(PresentationSlot, { foreignKey: 'student_id' });
 User.hasMany(PresentationSlot, { foreignKey: 'supervisor_id' });
 User.hasMany(PresentationSlot, { foreignKey: 'examiner_id' });
-User.hasMany(Amendment, { foreignKey: 'student_id' });
-User.hasMany(Amendment, { foreignKey: 'evaluator_id' });
+User.hasMany(Amendment, { foreignKey: 'student_id',as: 'StudentAmendments'});
+User.hasMany(Amendment, { foreignKey: 'evaluator_id' ,as: 'EvaluatedAmendments'});
 User.hasMany(ConsultationMeeting, { foreignKey: 'student_id' });
 User.hasMany(ConsultationMeeting, { foreignKey: 'supervisor_id' });
 
@@ -102,6 +108,27 @@ Amendment.belongsTo(Submission, { foreignKey: 'amended_submission_id', as: 'amen
 ConsultationMeeting.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 ConsultationMeeting.belongsTo(User, { foreignKey: 'supervisor_id', as: 'supervisor' });
 
+// Medium & Low Priority Features Associations
+PlagiarismCheck.belongsTo(Submission, { foreignKey: 'submission_id' });
+PlagiarismCheck.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+Submission.hasOne(PlagiarismCheck, { foreignKey: 'submission_id' });
+
+EthicalApproval.belongsTo(User, { foreignKey: 'student_id' });
+User.hasOne(EthicalApproval, { foreignKey: 'student_id' });
+
+Deliverable.belongsTo(Submission, { foreignKey: 'submission_id' });
+Deliverable.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+Submission.hasMany(Deliverable, { foreignKey: 'submission_id' });
+
+Exhibition.belongsTo(Phase, { foreignKey: 'phase_id' });
+Exhibition.belongsTo(User, { foreignKey: 'coordinator_id', as: 'coordinator' });
+Phase.hasMany(Exhibition, { foreignKey: 'phase_id' });
+
+ExhibitionAttendance.belongsTo(Exhibition, { foreignKey: 'exhibition_id' });
+ExhibitionAttendance.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+Exhibition.hasMany(ExhibitionAttendance, { foreignKey: 'exhibition_id' });
+User.hasMany(ExhibitionAttendance, { foreignKey: 'student_id' });
+
 export {
   sequelize,
   User,
@@ -121,5 +148,11 @@ export {
   PresentationSession,
   PresentationSlot,
   Amendment,
-  ConsultationMeeting
+  ConsultationMeeting,
+  ResourceLibrary,
+  PlagiarismCheck,
+  EthicalApproval,
+  Deliverable,
+  Exhibition,
+  ExhibitionAttendance
 };

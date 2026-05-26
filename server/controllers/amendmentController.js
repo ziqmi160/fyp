@@ -1,4 +1,4 @@
-import { Amendment, User, StudentProfile, PresentationSlot, EvaluationForm } from '../models/index.js';
+import { Amendment, User, StudentProfile, PresentationSlot, EvaluationForm, Submission } from '../models/index.js';
 import { Op } from 'sequelize';
 
 export const getAmendments = async (req, res) => {
@@ -6,7 +6,7 @@ export const getAmendments = async (req, res) => {
     const { status, student_id, phase } = req.query;
     const whereClause = {};
     
-    if (status) whereClause.status = status;
+    if (status) whereClause.f12_status = status;
     if (student_id) whereClause.student_id = student_id;
     if (phase) whereClause.phase = phase;
 
@@ -34,29 +34,8 @@ export const getAmendments = async (req, res) => {
         },
         {
           model: User,
-          as: 'supervisor',
+          as: 'evaluator',
           attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'examiner',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: PresentationSlot,
-          as: 'PresentationSlot',
-          include: [
-            {
-              model: User,
-              as: 'supervisor',
-              attributes: ['id', 'name']
-            },
-            {
-              model: User,
-              as: 'examiner',
-              attributes: ['id', 'name']
-            }
-          ]
         }
       ],
       order: [['created_at', 'DESC']]
@@ -108,26 +87,23 @@ export const createAmendment = async (req, res) => {
       return res.status(400).json({ message: 'Amendments can only be created for completed presentations' });
     }
 
-    // Check if amendment already exists for this presentation
-    const existingAmendment = await Amendment.findOne({
-      where: { presentation_slot_id }
+    // Get the student's latest submission
+    const submission = await Submission.findOne({
+      where: { student_id: presentationSlot.student_id },
+      order: [['created_at', 'DESC']]
     });
 
-    if (existingAmendment) {
-      return res.status(400).json({ message: 'Amendment already exists for this presentation' });
+    if (!submission) {
+      return res.status(404).json({ message: 'No submission found for this student' });
     }
 
     const amendment = await Amendment.create({
       student_id: presentationSlot.student_id,
-      presentation_slot_id,
-      supervisor_id: presentationSlot.supervisor_id,
-      examiner_id: presentationSlot.examiner_id,
+      submission_id: submission.id,
+      evaluator_id: presentationSlot.examiner_id,
       amendment_type,
-      description,
-      deadline_date,
-      phase: phase || 'CSP650',
-      status: 'pending',
-      created_by: req.user.id
+      original_feedback: description,
+      f12_status: 'pending'
     });
 
     const createdAmendment = await Amendment.findByPk(amendment.id, {
@@ -139,29 +115,8 @@ export const createAmendment = async (req, res) => {
         },
         {
           model: User,
-          as: 'supervisor',
+          as: 'evaluator',
           attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'examiner',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: PresentationSlot,
-          as: 'PresentationSlot',
-          include: [
-            {
-              model: User,
-              as: 'supervisor',
-              attributes: ['id', 'name']
-            },
-            {
-              model: User,
-              as: 'examiner',
-              attributes: ['id', 'name']
-            }
-          ]
         }
       ]
     });
@@ -175,25 +130,26 @@ export const createAmendment = async (req, res) => {
 export const updateAmendment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { description, deadline_date, status, f12_form_data } = req.body;
+    const { amended_submission_id, f12_form_data } = req.body;
 
     const amendment = await Amendment.findByPk(id);
     if (!amendment) {
       return res.status(404).json({ message: 'Amendment not found' });
     }
 
-    // Validate status transitions
-    if (amendment.status === 'completed' && status !== 'completed') {
-      return res.status(400).json({ message: 'Cannot change status of completed amendment' });
+    if (amendment.f12_status === 'completed') {
+      return res.status(400).json({ message: 'Cannot update a completed amendment' });
     }
 
-    await amendment.update({
-      description,
-      deadline_date,
-      status,
-      f12_form_data,
-      updated_by: req.user.id
-    });
+    const updateData = {};
+    if (amended_submission_id) {
+      updateData.amended_submission_id = amended_submission_id;
+    }
+    if (f12_form_data) {
+      updateData.f12_form_data = f12_form_data;
+    }
+
+    await amendment.update(updateData);
 
     const updatedAmendment = await Amendment.findByPk(id, {
       include: [
@@ -204,29 +160,8 @@ export const updateAmendment = async (req, res) => {
         },
         {
           model: User,
-          as: 'supervisor',
+          as: 'evaluator',
           attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'examiner',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: PresentationSlot,
-          as: 'PresentationSlot',
-          include: [
-            {
-              model: User,
-              as: 'supervisor',
-              attributes: ['id', 'name']
-            },
-            {
-              model: User,
-              as: 'examiner',
-              attributes: ['id', 'name']
-            }
-          ]
         }
       ]
     });
@@ -246,7 +181,7 @@ export const deleteAmendment = async (req, res) => {
       return res.status(404).json({ message: 'Amendment not found' });
     }
 
-    if (amendment.status !== 'pending') {
+    if (amendment.f12_status !== 'pending') {
       return res.status(400).json({ message: 'Can only delete pending amendments' });
     }
 
@@ -273,8 +208,8 @@ export const submitF12Form = async (req, res) => {
       return res.status(404).json({ message: 'Amendment not found' });
     }
 
-    if (amendment.status !== 'in_progress') {
-      return res.status(400).json({ message: 'F12 form can only be submitted for amendments in progress' });
+    if (amendment.f12_status !== 'pending') {
+      return res.status(400).json({ message: 'F12 form can only be submitted for pending amendments' });
     }
 
     const f12Data = {
@@ -288,7 +223,6 @@ export const submitF12Form = async (req, res) => {
 
     await amendment.update({
       f12_form_data: f12Data,
-      status: 'f12_submitted',
       updated_by: req.user.id
     });
 
@@ -301,12 +235,7 @@ export const submitF12Form = async (req, res) => {
         },
         {
           model: User,
-          as: 'supervisor',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'examiner',
+          as: 'evaluator',
           attributes: ['id', 'name', 'email']
         }
       ]
@@ -328,7 +257,11 @@ export const approveF12Form = async (req, res) => {
       return res.status(404).json({ message: 'Amendment not found' });
     }
 
-    if (amendment.status !== 'f12_submitted') {
+    if (amendment.f12_status === 'completed') {
+      return res.status(400).json({ message: 'This amendment is already completed' });
+    }
+
+    if (amendment.f12_status === 'pending') {
       return res.status(400).json({ message: 'F12 form must be submitted before approval' });
     }
 
@@ -341,6 +274,8 @@ export const approveF12Form = async (req, res) => {
         approved_by: req.user.id,
         comments
       };
+      amendment.supervisor_signature = f12Data.supervisor_approval;
+      amendment.supervisor_signed_at = new Date();
     } else if (role === 'examiner') {
       f12Data.examiner_approval = {
         approved: true,
@@ -348,22 +283,31 @@ export const approveF12Form = async (req, res) => {
         approved_by: req.user.id,
         comments
       };
+      amendment.examiner_signature = f12Data.examiner_approval;
+      amendment.examiner_signed_at = new Date();
     }
 
-    // Check if both have approved
-    if (f12Data.supervisor_approval?.approved && f12Data.examiner_approval?.approved) {
-      await amendment.update({
-        f12_form_data: f12Data,
-        status: 'completed',
-        completed_at: new Date(),
-        updated_by: req.user.id
-      });
-    } else {
-      await amendment.update({
-        f12_form_data: f12Data,
-        updated_by: req.user.id
-      });
+    // Determine new status based on current state and who's approving
+    let newStatus = amendment.f12_status;
+    if (amendment.f12_status === 'examiner_approved' && role === 'supervisor') {
+      newStatus = 'completed';
+    } else if (amendment.f12_status === 'supervisor_approved' && role === 'examiner') {
+      newStatus = 'completed';
+    } else if (amendment.f12_status === 'pending' || amendment.f12_status === 'examiner_approved' || amendment.f12_status === 'supervisor_approved') {
+      // First approval
+      if (role === 'examiner') {
+        newStatus = 'examiner_approved';
+      } else if (role === 'supervisor') {
+        newStatus = 'supervisor_approved';
+      }
     }
+
+    await amendment.update({
+      f12_form_data: f12Data,
+      f12_status: newStatus,
+      completed_at: newStatus === 'completed' ? new Date() : amendment.completed_at,
+      updated_by: req.user.id
+    });
 
     const updatedAmendment = await Amendment.findByPk(id, {
       include: [
@@ -374,12 +318,7 @@ export const approveF12Form = async (req, res) => {
         },
         {
           model: User,
-          as: 'supervisor',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'examiner',
+          as: 'evaluator',
           attributes: ['id', 'name', 'email']
         }
       ]
@@ -412,10 +351,10 @@ export const getAmendmentStats = async (req, res) => {
       where: whereClause,
       attributes: [
         [Amendment.sequelize.fn('COUNT', Amendment.sequelize.col('id')), 'total'],
-        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN status = 'pending' THEN 1 END`)), 'pending'],
-        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN status = 'in_progress' THEN 1 END`)), 'in_progress'],
-        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN status = 'f12_submitted' THEN 1 END`)), 'f12_submitted'],
-        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN status = 'completed' THEN 1 END`)), 'completed'],
+        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN f12_status = 'pending' THEN 1 END`)), 'pending'],
+        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN f12_status = 'examiner_approved' THEN 1 END`)), 'examiner_approved'],
+        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN f12_status = 'supervisor_approved' THEN 1 END`)), 'supervisor_approved'],
+        [Amendment.sequelize.fn('COUNT', Amendment.sequelize.literal(`CASE WHEN f12_status = 'completed' THEN 1 END`)), 'completed'],
       ]
     });
 

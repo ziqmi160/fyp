@@ -40,13 +40,13 @@ export default function CoordinatorStudents() {
 
   const filtered = students.filter(s =>
     !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (s.student_number || '').toLowerCase().includes(search.toLowerCase())
+    (s.student_id || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const exportCsv = () => {
     const headers = ['Name', 'Student No', 'Programme', 'Group', 'Supervisor', 'Phase', 'Examiner', 'FYP Status'];
     const rows = filtered.map(s => [
-      s.name, s.student_number, s.programme, s.group_name, 
+      s.name, s.student_id, s.programme, s.group_name, 
       s.supervisor_name || 'None', s.current_phase || 'CSP600', 
       s.examiner_name || 'None', s.fyp_status
     ].join(','));
@@ -110,7 +110,7 @@ export default function CoordinatorStudents() {
               <tr key={s.id} className="border-b last:border-0 hover:bg-gray-50">
                 <td className="p-4">
                   <div className="font-medium text-secondary">{s.name}</div>
-                  <div className="text-gray-500 text-xs">{s.student_number} | {s.programme}</div>
+                  <div className="text-gray-500 text-xs">{s.student_id} | {s.programme}</div>
                 </td>
                 <td className="p-4">{s.group_name}</td>
                 <td className="p-4">{s.supervisor_name || '-'}</td>

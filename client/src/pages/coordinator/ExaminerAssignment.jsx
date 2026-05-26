@@ -310,7 +310,7 @@ export default function ExaminerAssignment() {
                         <div>
                           <div className="font-medium">{assignment.student?.name}</div>
                           <div className="text-sm text-gray-500">
-                            {assignment.student?.StudentProfile?.student_number}
+                            {assignment.student?.StudentProfile?.student_id}
                           </div>
                         </div>
                       </td>
