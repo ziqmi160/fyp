@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { LayoutDashboard, Users, UserCheck, FileText, Calendar, TrendingUp, Video, Edit3 } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, FileText, Calendar, TrendingUp, Video, Edit3, BookOpen, Shield, ClipboardCheck, Package, Award } from 'lucide-react';
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,6 +12,11 @@ const navItems = [
   { path: 'supervisor', label: 'My Supervisor', icon: UserCheck },
   { path: 'submissions', label: 'Submissions', icon: FileText },
   { path: 'meetings', label: 'Meetings', icon: Calendar },
+  { path: 'resources', label: 'Resource Library', icon: BookOpen },
+  { path: 'plagiarism-check', label: 'Plagiarism Check', icon: Shield },
+  { path: 'ethical-approval', label: 'Ethical Approval', icon: ClipboardCheck },
+  { path: 'deliverables', label: 'Deliverables', icon: Package },
+  { path: 'exhibition', label: 'Exhibition', icon: Award },
 ];
 
 const titles = {
@@ -24,6 +29,11 @@ const titles = {
   supervisor: 'My Supervisor',
   submissions: 'Submissions',
   meetings: 'Meetings',
+  resources: 'Resource Library',
+  'plagiarism-check': 'Plagiarism Check',
+  'ethical-approval': 'Ethical Approval',
+  deliverables: 'Deliverables',
+  exhibition: 'Exhibition',
 };
 
 export default function StudentLayout() {

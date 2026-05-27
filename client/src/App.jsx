@@ -29,6 +29,16 @@ import ExaminerAssignment from './pages/coordinator/ExaminerAssignment';
 import PresentationSessions from './pages/coordinator/PresentationSessions';
 import EvaluationForms from './pages/supervisor/EvaluationForms';
 import AmendmentManagement from './pages/supervisor/AmendmentManagement';
+import ResourceLibraryPage from './pages/student/ResourceLibraryPage';
+import PlagiarismCheckPage from './pages/student/PlagiarismCheckPage';
+import EthicalApprovalPage from './pages/student/EthicalApprovalPage';
+import DeliverablesPage from './pages/student/DeliverablesPage';
+import ExhibitionPage from './pages/student/ExhibitionPage';
+import ResourceLibraryManagementPage from './pages/coordinator/ResourceLibraryManagementPage';
+import PlagiarismCheckReviewPage from './pages/coordinator/PlagiarismCheckReviewPage';
+import EthicalApprovalManagementPage from './pages/coordinator/EthicalApprovalManagementPage';
+import DeliverablesStatusPage from './pages/coordinator/DeliverablesStatusPage';
+import ExhibitionManagementPage from './pages/coordinator/ExhibitionManagementPage';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading, roleRoute } = useAuth();
@@ -63,6 +73,11 @@ export default function App() {
         <Route path="forms" element={<FormSubmissions />} />
         <Route path="presentations" element={<StudentPresentations />} />
         <Route path="amendments" element={<StudentAmendments />} />
+        <Route path="resources" element={<ResourceLibraryPage />} />
+        <Route path="plagiarism-check" element={<PlagiarismCheckPage />} />
+        <Route path="ethical-approval" element={<EthicalApprovalPage />} />
+        <Route path="deliverables" element={<DeliverablesPage />} />
+        <Route path="exhibition" element={<ExhibitionPage />} />
       </Route>
       <Route path="/supervisor" element={<ProtectedRoute allowedRoles={['supervisor']}><SupervisorLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -85,6 +100,11 @@ export default function App() {
         <Route path="phases" element={<PhaseManagement />} />
         <Route path="examiner-assignments" element={<ExaminerAssignment />} />
         <Route path="presentation-sessions" element={<PresentationSessions />} />
+        <Route path="resource-library" element={<ResourceLibraryManagementPage />} />
+        <Route path="plagiarism-checks" element={<PlagiarismCheckReviewPage />} />
+        <Route path="ethical-approval" element={<EthicalApprovalManagementPage />} />
+        <Route path="deliverables" element={<DeliverablesStatusPage />} />
+        <Route path="exhibition" element={<ExhibitionManagementPage />} />
       </Route>
       <Route path="/" element={<Navigate to={user ? roleRoute[user.role] : '/login'} replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />
