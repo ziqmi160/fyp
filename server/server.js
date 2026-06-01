@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 
 import authRoutes from './routes/authRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import supervisorRoutes from './routes/supervisorRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
@@ -29,6 +30,7 @@ import plagiarismCheckRoutes from './routes/plagiarismCheckRoutes.js';
 import ethicalApprovalRoutes from './routes/ethicalApprovalRoutes.js';
 import deliverableRoutes from './routes/deliverableRoutes.js';
 import exhibitionRoutes from './routes/exhibitionRoutes.js';
+import { warmUp } from './services/embeddingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -46,6 +48,7 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/supervisors', supervisorRoutes);
 app.use('/api/requests', requestRoutes);
@@ -85,4 +88,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  warmUp();
 });

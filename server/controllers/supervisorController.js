@@ -1,5 +1,6 @@
 import { User, SupervisorProfile, StudentProfile, Submission, SubmissionAttachment } from '../models/index.js';
 import { Op } from 'sequelize';
+import { getEmbedding, cosineSimilarity, recomputeSupervisorEmbedding } from '../services/embeddingService.js';
 
 export const listSupervisors = async (req, res) => {
   try {
@@ -29,10 +30,10 @@ export const listSupervisors = async (req, res) => {
 
     if (search) {
       const s = search.toLowerCase();
-      result = result.filter(r =>
-        (r.name || '').toLowerCase().includes(s) ||
-        (r.expertise || '').toLowerCase().includes(s)
-      );
+      result = result.filter(r => {
+        const expertiseText = Array.isArray(r.expertise) ? r.expertise.join(' ') : '';
+        return (r.name || '').toLowerCase().includes(s) || expertiseText.toLowerCase().includes(s);
+      });
     }
 
     if (available_only === 'true') {
@@ -184,6 +185,78 @@ export const getExaminingSubmissions = async (req, res) => {
     res.json({ success: true, data: submissions });
   } catch (error) {
     console.error('Get examining submissions error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const updateExpertise = async (req, res) => {
+  try {
+    const profile = await SupervisorProfile.findOne({ where: { user_id: req.user.id } });
+    if (!profile) {
+      return res.status(404).json({ success: false, error: 'Supervisor profile not found.' });
+    }
+
+    const { expertise } = req.body;
+    if (!Array.isArray(expertise)) {
+      return res.status(400).json({ success: false, error: 'Expertise must be an array.' });
+    }
+
+    await profile.update({ expertise });
+    await recomputeSupervisorEmbedding(profile);
+
+    res.json({ success: true, data: { expertise: profile.expertise }, message: 'Expertise updated.' });
+  } catch (error) {
+    console.error('Update expertise error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const getRecommendations = async (req, res) => {
+  try {
+    const studentProfile = await StudentProfile.findOne({ where: { user_id: req.user.id } });
+    if (!studentProfile) {
+      return res.status(404).json({ success: false, error: 'Student profile not found.' });
+    }
+
+    const description = req.query.description || studentProfile.project_description;
+    if (!description || !description.trim()) {
+      return res.status(400).json({ success: false, error: 'No project description provided.' });
+    }
+
+    const descEmbedding = await getEmbedding(description.trim());
+
+    const profiles = await SupervisorProfile.findAll({
+      where: {
+        is_accepting: true,
+        expertise_embedding: { [Op.ne]: null }
+      },
+      include: [{ model: User, attributes: ['id', 'name', 'email'], where: { is_active: true } }]
+    });
+
+    const scored = profiles
+      .filter(p => p.current_student_count < p.max_students)
+      .map(p => {
+        const embedding = JSON.parse(p.expertise_embedding);
+        const score = cosineSimilarity(descEmbedding, embedding);
+        return {
+          id: p.id,
+          user_id: p.User.id,
+          name: p.User.name,
+          email: p.User.email,
+          staff_id: p.staff_id,
+          expertise: p.expertise,
+          max_students: p.max_students,
+          current_student_count: p.current_student_count,
+          is_accepting: p.is_accepting,
+          match_score: Math.round(score * 100) / 100
+        };
+      })
+      .sort((a, b) => b.match_score - a.match_score)
+      .slice(0, 3);
+
+    res.json({ success: true, data: scored });
+  } catch (error) {
+    console.error('Get recommendations error:', error);
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };

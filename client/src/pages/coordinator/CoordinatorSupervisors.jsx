@@ -51,7 +51,11 @@ export default function CoordinatorSupervisors() {
             {supervisors.map((sup) => (
               <tr key={sup.id} className="border-t">
                 <td className="p-4 font-medium">{sup.name}</td>
-                <td className="p-4 text-sm">{sup.expertise || '-'}</td>
+                <td className="p-4 text-sm">
+                  {Array.isArray(sup.expertise) && sup.expertise.length > 0
+                    ? sup.expertise.join(', ')
+                    : '-'}
+                </td>
                 <td className="p-4 w-32">
                   <QuotaBar current={sup.current_student_count} max={sup.max_students} />
                 </td>

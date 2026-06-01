@@ -54,3 +54,24 @@ export const getMySchedules = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };
+
+export const updateProjectDescription = async (req, res) => {
+  try {
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ success: false, error: 'Only students can set a project description.' });
+    }
+
+    const { project_description } = req.body;
+    const profile = await StudentProfile.findOne({ where: { user_id: req.user.id } });
+    if (!profile) {
+      return res.status(404).json({ success: false, error: 'Student profile not found.' });
+    }
+
+    await profile.update({ project_description: project_description || null });
+
+    res.json({ success: true, data: { project_description: profile.project_description }, message: 'Project description saved.' });
+  } catch (error) {
+    console.error('Update project description error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};

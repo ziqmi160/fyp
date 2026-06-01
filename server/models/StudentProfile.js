@@ -45,6 +45,10 @@ const StudentProfile = sequelize.define('StudentProfile', {
   fyp_status: {
     type: DataTypes.ENUM('no_supervisor', 'pending_approval', 'active', 'submitted', 'completed'),
     defaultValue: 'no_supervisor'
+  },
+  project_description: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'student_profiles',

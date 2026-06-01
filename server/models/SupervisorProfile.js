@@ -19,7 +19,20 @@ const SupervisorProfile = sequelize.define('SupervisorProfile', {
     unique: true
   },
   expertise: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('expertise');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch { return []; }
+    },
+    set(val) {
+      this.setDataValue('expertise', JSON.stringify(val ?? []));
+    }
+  },
+  expertise_embedding: {
+    type: DataTypes.TEXT,
+    allowNull: true
   },
   max_students: {
     type: DataTypes.INTEGER,
