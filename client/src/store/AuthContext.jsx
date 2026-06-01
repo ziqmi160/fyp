@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
     student: '/student/dashboard',
     supervisor: '/supervisor/dashboard',
     coordinator: '/coordinator/dashboard',
+    super_admin: '/admin/coordinators',
   };
 
   return (

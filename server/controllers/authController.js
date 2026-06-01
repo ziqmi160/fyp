@@ -22,6 +22,12 @@ export const login = async (req, res) => {
     }
 
     if (!user.is_active) {
+      if (user.approval_status === 'pending') {
+        return res.status(403).json({ success: false, error: 'Your account is pending coordinator approval.' });
+      }
+      if (user.approval_status === 'rejected') {
+        return res.status(403).json({ success: false, error: 'Your registration was rejected. Please contact the coordinator.' });
+      }
       return res.status(401).json({ success: false, error: 'Account is deactivated.' });
     }
 
@@ -50,10 +56,18 @@ export const login = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, student_id, staff_id } = req.body;
+    const { name, email, password, role, student_id, staff_id, programme } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ success: false, error: 'Name, email, password and role are required.' });
+    }
+
+    if (role === 'coordinator' || role === 'super_admin') {
+      return res.status(403).json({ success: false, error: 'This role cannot self-register.' });
+    }
+
+    if (!['student', 'supervisor'].includes(role)) {
+      return res.status(400).json({ success: false, error: 'Invalid role.' });
     }
 
     const existing = await User.findOne({ where: { email: email.toLowerCase() } });
@@ -62,24 +76,33 @@ export const register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const isSupervisor = role === 'supervisor';
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       password: hashedPassword,
-      role
+      role,
+      is_active: !isSupervisor,
+      approval_status: isSupervisor ? 'pending' : null
     });
 
-    if (role === 'student' && student_id) {
-      await StudentProfile.create({
-        user_id: user.id,
-        student_id
-      });
+    if (role === 'student') {
+      if (!student_id) {
+        return res.status(400).json({ success: false, error: 'Student ID is required.' });
+      }
+      await StudentProfile.create({ user_id: user.id, student_id, programme: programme || null });
     }
 
-    if (role === 'supervisor' && staff_id) {
-      await SupervisorProfile.create({
-        user_id: user.id,
-        staff_id
+    if (role === 'supervisor') {
+      if (!staff_id) {
+        return res.status(400).json({ success: false, error: 'Staff ID is required.' });
+      }
+      await SupervisorProfile.create({ user_id: user.id, staff_id });
+      return res.status(201).json({
+        success: true,
+        data: null,
+        message: 'Registration submitted. Awaiting coordinator approval.'
       });
     }
 

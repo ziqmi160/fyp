@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../store/AuthContext';
 import api from '../../services/api';
@@ -69,8 +69,9 @@ export default function LoginPage() {
               {isSubmitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Test: student@fyp.com / password123
+          <p className="text-center text-sm text-gray-500 mt-5">
+            Don&apos;t have an account?{' '}
+            <Link to="/register" className="text-primary font-medium hover:underline">Register</Link>
           </p>
         </div>
       </div>

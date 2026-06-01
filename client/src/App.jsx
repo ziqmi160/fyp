@@ -1,9 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './store/AuthContext';
 import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
 import StudentLayout from './components/layout/StudentLayout';
 import SupervisorLayout from './components/layout/SupervisorLayout';
 import CoordinatorLayout from './components/layout/CoordinatorLayout';
+import SuperAdminLayout from './components/layout/SuperAdminLayout';
 import StudentDashboard from './pages/student/StudentDashboard';
 import SupervisorMarketplace from './pages/student/SupervisorMarketplace';
 import MySupervisor from './pages/student/MySupervisor';
@@ -39,6 +41,8 @@ import PlagiarismCheckReviewPage from './pages/coordinator/PlagiarismCheckReview
 import EthicalApprovalManagementPage from './pages/coordinator/EthicalApprovalManagementPage';
 import DeliverablesStatusPage from './pages/coordinator/DeliverablesStatusPage';
 import ExhibitionManagementPage from './pages/coordinator/ExhibitionManagementPage';
+import PendingApprovals from './pages/coordinator/PendingApprovals';
+import ManageCoordinators from './pages/admin/ManageCoordinators';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading, roleRoute } = useAuth();
@@ -62,6 +66,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to={roleRoute[user.role]} replace /> : <LoginPage />} />
+      <Route path="/register" element={user ? <Navigate to={roleRoute[user.role]} replace /> : <RegisterPage />} />
       <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<StudentDashboard />} />
@@ -105,6 +110,11 @@ export default function App() {
         <Route path="ethical-approval" element={<EthicalApprovalManagementPage />} />
         <Route path="deliverables" element={<DeliverablesStatusPage />} />
         <Route path="exhibition" element={<ExhibitionManagementPage />} />
+        <Route path="approvals" element={<PendingApprovals />} />
+      </Route>
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminLayout /></ProtectedRoute>}>
+        <Route index element={<Navigate to="coordinators" replace />} />
+        <Route path="coordinators" element={<ManageCoordinators />} />
       </Route>
       <Route path="/" element={<Navigate to={user ? roleRoute[user.role] : '/login'} replace />} />
       <Route path="*" element={<Navigate to="/" replace />} />

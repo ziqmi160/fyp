@@ -22,12 +22,17 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   role: {
-    type: DataTypes.ENUM('student', 'supervisor', 'coordinator'),
+    type: DataTypes.ENUM('student', 'supervisor', 'coordinator', 'super_admin'),
     allowNull: false
   },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  approval_status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    allowNull: true,
+    defaultValue: null
   }
 }, {
   tableName: 'users',

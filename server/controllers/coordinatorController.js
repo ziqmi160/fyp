@@ -342,3 +342,57 @@ export const getPresentationSchedules = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };
+
+export const getPendingSupervisors = async (req, res) => {
+  try {
+    const pending = await User.findAll({
+      where: { role: 'supervisor', approval_status: 'pending' },
+      attributes: ['id', 'name', 'email', 'created_at'],
+      include: [{
+        model: SupervisorProfile,
+        attributes: ['staff_id']
+      }],
+      order: [['created_at', 'ASC']]
+    });
+
+    const result = pending.map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      staff_id: u.SupervisorProfile?.staff_id,
+      registered_at: u.created_at
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Get pending supervisors error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const updateSupervisorApproval = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action, reason } = req.body;
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ success: false, error: 'Action must be approve or reject.' });
+    }
+
+    const user = await User.findOne({ where: { id, role: 'supervisor' } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Supervisor not found.' });
+    }
+
+    if (action === 'approve') {
+      await user.update({ is_active: true, approval_status: 'approved' });
+      return res.json({ success: true, message: 'Supervisor approved.' });
+    }
+
+    await user.update({ is_active: false, approval_status: 'rejected' });
+    res.json({ success: true, message: 'Supervisor rejected.' });
+  } catch (error) {
+    console.error('Update supervisor approval error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};

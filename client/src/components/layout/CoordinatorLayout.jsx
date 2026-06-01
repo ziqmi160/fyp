@@ -1,11 +1,12 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { LayoutDashboard, Users, UserCheck, FileBarChart, Calendar, Layers, Eye, BookOpen, Shield, ClipboardCheck, Package, Award } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, FileBarChart, Calendar, Layers, Eye, BookOpen, Shield, ClipboardCheck, Package, Award, UserCog } from 'lucide-react';
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: 'students', label: 'Students', icon: Users },
   { path: 'supervisors', label: 'Supervisors', icon: UserCheck },
+  { path: 'approvals', label: 'Pending Approvals', icon: UserCog },
   { path: 'phases', label: 'Phase Management', icon: Layers },
   { path: 'examiner-assignments', label: 'Examiner Assignments', icon: Eye },
   { path: 'presentation-sessions', label: 'Presentation Sessions', icon: Calendar },
@@ -22,6 +23,7 @@ const titles = {
   dashboard: 'Dashboard',
   students: 'Students',
   supervisors: 'Supervisors',
+  approvals: 'Pending Approvals',
   phases: 'Phase Management',
   'examiner-assignments': 'Examiner Assignments',
   'presentation-sessions': 'Presentation Sessions',
