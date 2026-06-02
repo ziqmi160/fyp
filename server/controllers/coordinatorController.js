@@ -3,6 +3,7 @@ import { User, StudentProfile, SupervisorProfile, Submission, SupervisionRequest
 import { generateProgressReport } from '../services/pdfService.js';
 import path from 'path';
 import fs from 'fs';
+import bcrypt from 'bcryptjs';
 
 export const getStats = async (req, res) => {
   try {
@@ -393,6 +394,78 @@ export const updateSupervisorApproval = async (req, res) => {
     res.json({ success: true, message: 'Supervisor rejected.' });
   } catch (error) {
     console.error('Update supervisor approval error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+// Parse a simple CSV buffer into an array of objects using the first row as headers.
+const parseCsv = (buffer) => {
+  const lines = buffer.toString('utf8').split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+  return lines.slice(1).map(line => {
+    const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+    return Object.fromEntries(headers.map((h, i) => [h, values[i] || '']));
+  });
+};
+
+export const importStudents = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No CSV file uploaded.' });
+    }
+
+    const rows = parseCsv(req.file.buffer);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'CSV is empty or has no data rows.' });
+    }
+
+    const created = [];
+    const skipped = [];
+
+    for (const row of rows) {
+      const { student_id, name, email, programme, group } = row;
+
+      if (!student_id || !name || !email) {
+        skipped.push({ row, reason: 'Missing required fields (student_id, name, email)' });
+        continue;
+      }
+
+      const existing = await User.findOne({ where: { email: email.toLowerCase() } });
+      if (existing) {
+        skipped.push({ student_id, email, reason: 'Email already exists' });
+        continue;
+      }
+
+      // Initial password is the matric number; students should change it after first login.
+      const hashedPassword = await bcrypt.hash(student_id, 10);
+
+      const user = await User.create({
+        name,
+        email: email.toLowerCase(),
+        password: hashedPassword,
+        role: 'student',
+        is_active: true,
+        approval_status: null
+      });
+
+      await StudentProfile.create({
+        user_id: user.id,
+        student_id,
+        programme: programme || null,
+        group_name: group || null
+      });
+
+      created.push({ student_id, name, email: email.toLowerCase() });
+    }
+
+    res.status(201).json({
+      success: true,
+      data: { created, skipped },
+      message: `${created.length} student(s) imported. ${skipped.length} skipped.`
+    });
+  } catch (error) {
+    console.error('Import students error:', error);
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };

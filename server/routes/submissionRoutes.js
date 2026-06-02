@@ -1,5 +1,5 @@
 import express from 'express';
-import { createSubmission, getMySubmissions, getPendingSubmissions, getSubmission, reviewSubmission } from '../controllers/submissionController.js';
+import { createSubmission, getMySubmissions, getPendingSubmissions, getSubmission, reviewSubmission, uploadSignedReport } from '../controllers/submissionController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { studentOnly, supervisorOnly } from '../middleware/rbac.js';
 import { uploadSubmissions } from '../middleware/upload.js';
@@ -13,5 +13,6 @@ router.get('/my', studentOnly, getMySubmissions);
 router.get('/pending', supervisorOnly, getPendingSubmissions);
 router.get('/:id', getSubmission);
 router.put('/:id/review', supervisorOnly, reviewSubmission);
+router.put('/:id/upload-signed-report', supervisorOnly, uploadSubmissions.single('file'), uploadSignedReport);
 
 export default router;

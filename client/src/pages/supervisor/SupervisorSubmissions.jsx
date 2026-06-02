@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/common/StatusBadge';
 import EmptyState from '../../components/common/EmptyState';
-import { FileText, ExternalLink, Download, Eye, X } from 'lucide-react';
+import { FileText, ExternalLink, Download, Eye, X, Upload, CheckCircle } from 'lucide-react';
 import FileViewer from 'react-file-viewer';
 // import DocViewer, { DocViewerRenderers } from "@cyntler/react-doc-viewer";
 
@@ -14,6 +14,8 @@ export default function SupervisorSubmissions() {
   const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState('approved');
   const [previewFile, setPreviewFile] = useState(null);
+  const [signedReportFile, setSignedReportFile] = useState(null);
+  const signedReportInputRef = useRef(null);
   const qc = useQueryClient();
 
   const { data: submissions = [] } = useQuery({
@@ -40,6 +42,23 @@ export default function SupervisorSubmissions() {
       qc.invalidateQueries(['submissions-pending']);
     },
     onError: (err) => toast.error(err.response?.data?.error || 'Failed'),
+  });
+
+  const uploadSignedReportMutation = useMutation({
+    mutationFn: ({ id, file }) => {
+      const form = new FormData();
+      form.append('file', file);
+      return api.put(`/submissions/${id}/upload-signed-report`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+    onSuccess: (res) => {
+      toast.success('Signed report uploaded');
+      setSignedReportFile(null);
+      setSelected(res.data.data);
+      qc.invalidateQueries(['submissions-pending']);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Upload failed'),
   });
 
   const handleReview = () => {
@@ -145,29 +164,100 @@ export default function SupervisorSubmissions() {
               )}
               {activeTab === 'supervisees' && (
                 <>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Feedback</label>
-                    <textarea
-                      value={feedback}
-                      onChange={(e) => setFeedback(e.target.value)}
-                      className="w-full px-4 py-2 rounded-lg border"
-                      rows={4}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Status</label>
-                    <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-4 py-2 rounded-lg border">
-                      <option value="approved">Approved</option>
-                      <option value="revision_required">Revision Required</option>
-                    </select>
-                  </div>
-                  <button
-                    onClick={handleReview}
-                    disabled={reviewMutation.isPending}
-                    className="w-full py-2 rounded-lg bg-primary text-white hover:bg-primary-light"
-                  >
-                    Submit Review
-                  </button>
+                  {selected.status === 'pending' && (
+                    <>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">Feedback</label>
+                        <textarea
+                          value={feedback}
+                          onChange={(e) => setFeedback(e.target.value)}
+                          className="w-full px-4 py-2 rounded-lg border"
+                          rows={4}
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">Status</label>
+                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-4 py-2 rounded-lg border">
+                          <option value="approved">Approved</option>
+                          <option value="revision_required">Revision Required</option>
+                        </select>
+                      </div>
+                      <button
+                        onClick={handleReview}
+                        disabled={reviewMutation.isPending}
+                        className="w-full py-2 rounded-lg bg-primary text-white hover:bg-primary-light"
+                      >
+                        Submit Review
+                      </button>
+                    </>
+                  )}
+
+                  {/* Supervisor Approval page upload — only for final/F6b submissions */}
+                  {['final', 'F6b'].includes(selected.submission_type) && (
+                    <div className="mt-6 border-t pt-4">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Supervisor Approval Page</h4>
+                      {selected.supervisor_report_approved_at ? (
+                        <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                          <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+                          <div className="text-sm">
+                            <p className="text-green-800 font-medium">Signed report uploaded</p>
+                            <p className="text-green-600 text-xs">
+                              {new Date(selected.supervisor_report_approved_at).toLocaleString()}
+                            </p>
+                          </div>
+                          {selected.supervisor_signed_report_path && (
+                            <a
+                              href={`/uploads/${selected.supervisor_signed_report_path}`}
+                              download
+                              className="ml-auto p-1.5 text-green-700 hover:bg-green-100 rounded transition"
+                              title="Download signed report"
+                            >
+                              <Download className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-xs text-gray-500">
+                            Download the student's report, sign the Supervisor Approval page, then upload the signed version.
+                          </p>
+                          <input
+                            ref={signedReportInputRef}
+                            type="file"
+                            accept=".pdf,.docx"
+                            className="hidden"
+                            onChange={(e) => setSignedReportFile(e.target.files[0])}
+                          />
+                          {signedReportFile ? (
+                            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded border text-sm">
+                              <FileText className="w-4 h-4 text-primary shrink-0" />
+                              <span className="truncate flex-1">{signedReportFile.name}</span>
+                              <button onClick={() => setSignedReportFile(null)} className="text-gray-400 hover:text-red-500">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => signedReportInputRef.current?.click()}
+                              className="flex items-center gap-2 px-3 py-2 text-sm border border-dashed border-gray-300 rounded-lg hover:border-primary hover:text-primary transition w-full justify-center"
+                            >
+                              <Upload className="w-4 h-4" />
+                              Select signed report
+                            </button>
+                          )}
+                          {signedReportFile && (
+                            <button
+                              onClick={() => uploadSignedReportMutation.mutate({ id: selected.id, file: signedReportFile })}
+                              disabled={uploadSignedReportMutation.isPending}
+                              className="w-full py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition text-sm disabled:opacity-50"
+                            >
+                              Upload Signed Report
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>

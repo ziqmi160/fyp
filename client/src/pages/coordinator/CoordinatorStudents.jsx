@@ -1,13 +1,18 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import toast from 'react-hot-toast';
 import StatusBadge from '../../components/common/StatusBadge';
-import { Edit2, X } from 'lucide-react';
+import { Edit2, X, Upload, FileText, Download } from 'lucide-react';
 
 export default function CoordinatorStudents() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [editingStudent, setEditingStudent] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
+  const csvInputRef = useRef(null);
   const queryClient = useQueryClient();
 
   const { data: students = [] } = useQuery({
@@ -26,6 +31,23 @@ export default function CoordinatorStudents() {
       const { data } = await api.get('/coordinator/supervisors');
       return data.data || [];
     },
+  });
+
+  const importMutation = useMutation({
+    mutationFn: (file) => {
+      const form = new FormData();
+      form.append('csv', file);
+      return api.post('/coordinator/import-students', form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+    onSuccess: (res) => {
+      setImportResult(res.data.data);
+      setCsvFile(null);
+      queryClient.invalidateQueries(['coordinator-students']);
+      toast.success(res.data.message);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Import failed'),
   });
 
   const updateMutation = useMutation({
@@ -88,6 +110,9 @@ export default function CoordinatorStudents() {
             <option value="active">Active</option>
             <option value="completed">Completed</option>
           </select>
+          <button onClick={() => { setShowImport(true); setImportResult(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
+            <Upload className="w-4 h-4" />Import Students
+          </button>
           <button onClick={exportCsv} className="px-4 py-2 rounded-lg bg-primary text-white">Export CSV</button>
         </div>
       </div>
@@ -140,6 +165,101 @@ export default function CoordinatorStudents() {
           </tbody>
         </table>
       </div>
+
+      {/* Import Students Modal */}
+      {showImport && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+            <div className="p-6 border-b flex justify-between items-center bg-gray-50">
+              <h3 className="font-semibold text-lg text-secondary">Import Students from CSV</h3>
+              <button onClick={() => { setShowImport(false); setCsvFile(null); setImportResult(null); }} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {!importResult ? (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                    <p className="font-medium mb-1">Required CSV columns:</p>
+                    <code className="text-xs">student_id, name, email, programme, group</code>
+                    <p className="mt-2 text-xs">Initial password for each student will be their Student ID (matric number).</p>
+                  </div>
+
+                  <a
+                    href="data:text/csv;charset=utf-8,student_id%2Cname%2Cemail%2Cprogramme%2Cgroup%0A2021123456%2CAhmad%20bin%20Ali%2Cahmad@student.uitm.edu.my%2CCS230%2CBITP3A"
+                    download="students_template.csv"
+                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download CSV template
+                  </a>
+
+                  <input
+                    ref={csvInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={(e) => setCsvFile(e.target.files[0])}
+                  />
+
+                  {csvFile ? (
+                    <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border text-sm">
+                      <FileText className="w-4 h-4 text-primary shrink-0" />
+                      <span className="flex-1 truncate">{csvFile.name}</span>
+                      <button onClick={() => setCsvFile(null)} className="text-gray-400 hover:text-red-500">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => csvInputRef.current?.click()}
+                      className="flex items-center gap-2 w-full justify-center px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:text-primary transition text-sm text-gray-500"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Select CSV file
+                    </button>
+                  )}
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <button onClick={() => { setShowImport(false); setCsvFile(null); }} className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button
+                      onClick={() => importMutation.mutate(csvFile)}
+                      disabled={!csvFile || importMutation.isPending}
+                      className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {importMutation.isPending ? 'Importing...' : 'Import'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex gap-4">
+                    <div className="flex-1 bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-700">{importResult.created.length}</div>
+                      <div className="text-sm text-green-600">Students imported</div>
+                    </div>
+                    <div className="flex-1 bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-700">{importResult.skipped.length}</div>
+                      <div className="text-sm text-yellow-600">Skipped</div>
+                    </div>
+                  </div>
+                  {importResult.skipped.length > 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                      <p className="text-sm font-medium text-yellow-800 mb-2">Skipped rows:</p>
+                      <ul className="text-xs text-yellow-700 space-y-1">
+                        {importResult.skipped.map((s, i) => (
+                          <li key={i}>{s.email || s.student_id || 'row'} — {s.reason}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  <button onClick={() => { setShowImport(false); setImportResult(null); }} className="w-full py-2 rounded-lg bg-primary text-white">Done</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {editingStudent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">

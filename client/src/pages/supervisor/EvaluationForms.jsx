@@ -251,18 +251,31 @@ export default function EvaluationForms() {
                   <select
                     value={formData.form_type}
                     onChange={(e) => {
-                      setFormData({ ...formData, form_type: e.target.value, scores: {} });
-                      setSelectedFormType(e.target.value);
+                      const type = e.target.value;
+                      const csp600Types = ['F3', 'F4', 'F7', 'F8'];
+                      setFormData({
+                        ...formData,
+                        form_type: type,
+                        phase: csp600Types.includes(type) ? 'CSP600' : formData.phase,
+                        scores: {}
+                      });
+                      setSelectedFormType(type);
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                     required
                   >
-                    <option value="F7">F7 - Proposal Presentation</option>
-                    <option value="F8">F8 - Proposal Report</option>
-                    <option value="F9">F9 - Progress Presentation</option>
-                    <option value="F10">F10 - Final Presentation</option>
-                    <option value="F11">F11 - Final Report</option>
-                    <option value="F13">F13 - LMC Evaluation</option>
+                    <optgroup label="CSP600 — Project Formulation">
+                      <option value="F3">F3 - Literature Review Evaluation</option>
+                      <option value="F4">F4 - Methodology Evaluation</option>
+                      <option value="F7">F7 - Proposal Presentation</option>
+                      <option value="F8">F8 - Proposal Report</option>
+                    </optgroup>
+                    <optgroup label="CSP650 — Project">
+                      <option value="F9">F9 - Progress Presentation</option>
+                      <option value="F10">F10 - Final Presentation</option>
+                      <option value="F11">F11 - Final Report</option>
+                      <option value="F13">F13 - LMC Evaluation</option>
+                    </optgroup>
                   </select>
                 </div>
 

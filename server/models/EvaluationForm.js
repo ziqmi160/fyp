@@ -18,7 +18,7 @@ const EvaluationForm = sequelize.define('EvaluationForm', {
     references: { model: 'users', key: 'id' }
   },
   form_type: {
-    type: DataTypes.ENUM('F7', 'F8', 'F9', 'F10', 'F11', 'F13'),
+    type: DataTypes.ENUM('F3', 'F4', 'F7', 'F8', 'F9', 'F10', 'F11', 'F13'),
     allowNull: false
   },
   phase: {

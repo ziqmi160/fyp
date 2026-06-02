@@ -48,6 +48,14 @@ const Submission = sequelize.define('Submission', {
   reviewed_at: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  supervisor_signed_report_path: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
+  supervisor_report_approved_at: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'submissions',

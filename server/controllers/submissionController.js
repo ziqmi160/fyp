@@ -115,6 +115,46 @@ export const getSubmission = async (req, res) => {
   }
 };
 
+export const uploadSignedReport = async (req, res) => {
+  try {
+    const submission = await Submission.findByPk(req.params.id);
+
+    if (!submission || submission.supervisor_id !== req.user.id) {
+      return res.status(404).json({ success: false, error: 'Submission not found.' });
+    }
+
+    if (!['final', 'F6b'].includes(submission.submission_type)) {
+      return res.status(400).json({ success: false, error: 'Signed report upload is only for final/F6b submissions.' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No file uploaded.' });
+    }
+
+    const pathParts = req.file.path.replace(/\\/g, '/').split('/');
+    const relPath = pathParts.slice(pathParts.indexOf('uploads') + 1).join('/');
+
+    await submission.update({
+      supervisor_signed_report_path: relPath,
+      supervisor_report_approved_at: new Date()
+    });
+
+    await createNotification(
+      submission.student_id,
+      'Supervisor Signed Report Uploaded',
+      `Your supervisor has uploaded the signed Supervisor Approval page for "${submission.title}".`,
+      'success',
+      submission.id,
+      'submission'
+    );
+
+    res.json({ success: true, data: submission, message: 'Signed report uploaded.' });
+  } catch (error) {
+    console.error('Upload signed report error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
 export const reviewSubmission = async (req, res) => {
   try {
     const { supervisor_feedback, status } = req.body;

@@ -1,4 +1,4 @@
-import { EvaluationForm, User, StudentProfile, ExaminerAssignment, PresentationSlot, Amendment } from '../models/index.js';
+import { EvaluationForm, User, StudentProfile, SupervisorProfile, ExaminerAssignment, PresentationSlot, Amendment } from '../models/index.js';
 import { Op } from 'sequelize';
 
 export const getStudentMarks = async (req, res) => {
@@ -150,14 +150,43 @@ export const exportMarksReport = async (req, res) => {
       order: [['student_id', 'ASC'], ['form_type', 'ASC']]
     });
 
-    if (format === 'csv') {
+    if (format === 'res') {
+      // RES-compatible CSV: one row per student with consolidated total marks
+      const studentMap = {};
+      evaluationForms.forEach(form => {
+        const sid = form.student_id;
+        if (!studentMap[sid]) {
+          studentMap[sid] = {
+            student_id: form.StudentProfile?.student_id || '',
+            name: form.student?.name || '',
+            programme: form.StudentProfile?.programme || '',
+            group: form.StudentProfile?.group_name || '',
+            course_code: form.phase || phase || '',
+            total_score: 0,
+            max_score: 0
+          };
+        }
+        studentMap[sid].total_score += parseFloat(form.total_score) || 0;
+        studentMap[sid].max_score += parseFloat(form.max_score) || 0;
+      });
+
+      const csvHeader = 'Student ID,Name,Programme,Group,Course Code,Total Marks\n';
+      const csvData = Object.values(studentMap).map(s => {
+        const total = s.max_score > 0 ? ((s.total_score / s.max_score) * 100).toFixed(2) : '0.00';
+        return `${s.student_id},"${s.name}","${s.programme}","${s.group}",${s.course_code},${total}`;
+      }).join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="RES_marks_${phase || 'all'}_${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csvHeader + csvData);
+    } else if (format === 'csv') {
       // Generate CSV
       const csvHeader = 'Student Number,Student Name,Form Type,Total Score,Max Score,Percentage,Evaluator,Evaluation Date\n';
       const csvData = evaluationForms.map(form => {
         const percentage = form.max_score > 0 ? ((form.total_score / form.max_score) * 100).toFixed(2) : '0';
         return `${form.StudentProfile?.student_id || ''},"${form.student?.name || ''}",${form.form_type},${form.total_score || 0},${form.max_score || 0},${percentage}%,"${form.evaluator?.name || ''}",${form.created_at ? new Date(form.created_at).toLocaleDateString() : ''}`;
       }).join('\n');
-      
+
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="marks_report_${phase || 'all'}_${new Date().toISOString().split('T')[0]}.csv"`);
       res.send(csvHeader + csvData);

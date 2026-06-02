@@ -66,7 +66,12 @@ export const register = async (req, res) => {
       return res.status(403).json({ success: false, error: 'This role cannot self-register.' });
     }
 
-    if (!['student', 'supervisor'].includes(role)) {
+    // Students are registered by the coordinator via CSV import — self-registration is disabled.
+    if (role === 'student') {
+      return res.status(403).json({ success: false, error: 'Student accounts are created by the coordinator. Please contact your coordinator.' });
+    }
+
+    if (role !== 'supervisor') {
       return res.status(400).json({ success: false, error: 'Invalid role.' });
     }
 

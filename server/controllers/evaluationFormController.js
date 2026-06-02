@@ -1,8 +1,30 @@
-import { EvaluationForm, User, Submission, ExaminerAssignment } from '../models/index.js';
+import { EvaluationForm, User, Submission, ExaminerAssignment, StudentProfile } from '../models/index.js';
 import { Op } from 'sequelize';
 
 // Define rubric templates for each form type
 const RUBRIC_TEMPLATES = {
+  F3: {
+    name: 'Literature Review Evaluation Form',
+    max_score: 100,
+    criteria: [
+      { name: 'Relevance of Sources', max_score: 20 },
+      { name: 'Depth of Review', max_score: 25 },
+      { name: 'Critical Analysis', max_score: 20 },
+      { name: 'Organisation & Structure', max_score: 15 },
+      { name: 'Citation & Referencing', max_score: 20 }
+    ]
+  },
+  F4: {
+    name: 'Methodology Evaluation Form',
+    max_score: 100,
+    criteria: [
+      { name: 'Appropriateness of Methodology', max_score: 25 },
+      { name: 'Research Design', max_score: 20 },
+      { name: 'Data Collection & Instruments', max_score: 20 },
+      { name: 'Feasibility & Timeline', max_score: 20 },
+      { name: 'Ethical Considerations', max_score: 15 }
+    ]
+  },
   F7: {
     name: 'Proposal Presentation Form',
     max_score: 100,
@@ -134,17 +156,27 @@ export const createEvaluationForm = async (req, res) => {
 
     // Check if evaluator is assigned to evaluate this student
     if (req.user.role === 'supervisor') {
-      const assignment = await ExaminerAssignment.findOne({
-        where: {
-          student_id,
-          examiner_id: evaluator_id,
-          phase,
-          status: 'active'
+      // F3/F4 can be created by the student's own supervisor
+      if (['F3', 'F4'].includes(form_type)) {
+        const studentProfile = await StudentProfile.findOne({
+          where: { user_id: student_id, current_supervisor_id: evaluator_id }
+        });
+        if (!studentProfile) {
+          return res.status(403).json({ message: 'You are not the supervisor for this student' });
         }
-      });
-
-      if (!assignment && form_type !== 'F9') { // F9 can be done by supervisor
-        return res.status(403).json({ message: 'You are not assigned as examiner for this student' });
+      } else {
+        // F9 can be done by the supervisor; all other forms require examiner assignment
+        const assignment = await ExaminerAssignment.findOne({
+          where: {
+            student_id,
+            examiner_id: evaluator_id,
+            phase,
+            status: 'active'
+          }
+        });
+        if (!assignment && form_type !== 'F9') {
+          return res.status(403).json({ message: 'You are not assigned as examiner for this student' });
+        }
       }
     }
 

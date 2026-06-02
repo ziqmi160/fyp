@@ -5,17 +5,17 @@ import { z } from 'zod';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { CheckCircle } from 'lucide-react';
-import { useAuth } from '../../store/AuthContext';
 import api from '../../services/api';
 
-const studentSchema = z.object({
-  role: z.literal('student'),
-  name: z.string().min(2, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  student_id: z.string().min(1, 'Student ID is required'),
-  programme: z.string().min(1, 'Programme is required'),
-});
+// Student self-registration is disabled; students are registered by the coordinator via CSV import.
+// const studentSchema = z.object({
+//   role: z.literal('student'),
+//   name: z.string().min(2, 'Name is required'),
+//   email: z.string().email('Invalid email'),
+//   password: z.string().min(6, 'Password must be at least 6 characters'),
+//   student_id: z.string().min(1, 'Student ID is required'),
+//   programme: z.string().min(1, 'Programme is required'),
+// });
 
 const supervisorSchema = z.object({
   role: z.literal('supervisor'),
@@ -25,38 +25,21 @@ const supervisorSchema = z.object({
   staff_id: z.string().min(1, 'Staff ID is required'),
 });
 
-const schema = z.discriminatedUnion('role', [studentSchema, supervisorSchema]);
+const schema = supervisorSchema;
 
 export default function RegisterPage() {
-  const { login, roleRoute } = useAuth();
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
-  const [selectedRole, setSelectedRole] = useState('student');
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { role: 'student' },
+    defaultValues: { role: 'supervisor' },
   });
-
-  const role = watch('role');
-
-  const handleRoleChange = (newRole) => {
-    setSelectedRole(newRole);
-    setValue('role', newRole);
-  };
 
   const onSubmit = async (data) => {
     try {
-      const { data: res } = await api.post('/auth/register', data);
-
-      if (data.role === 'supervisor') {
-        setSubmitted(true);
-        return;
-      }
-
-      login(res.data.token, res.data.user);
-      toast.success('Account created! Welcome.');
-      navigate(roleRoute[res.data.user.role]);
+      await api.post('/auth/register', { ...data, role: 'supervisor' });
+      setSubmitted(true);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
     }
@@ -91,28 +74,13 @@ export default function RegisterPage() {
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary text-white text-2xl font-bold mb-4">
               FYP
             </div>
-            <h1 className="text-2xl font-bold text-secondary">Create Account</h1>
+            <h1 className="text-2xl font-bold text-secondary">Supervisor Registration</h1>
             <p className="text-gray-500 text-sm mt-1">FYP Management System</p>
-          </div>
-
-          {/* Role selector */}
-          <div className="flex rounded-lg border border-gray-200 p-1 mb-5">
-            {['student', 'supervisor'].map(r => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => handleRoleChange(r)}
-                className={`flex-1 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-                  role === r ? 'bg-primary text-white' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {r}
-              </button>
-            ))}
+            <p className="text-xs text-gray-400 mt-1">Students are registered by the coordinator</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <input type="hidden" {...register('role')} />
+            <input type="hidden" {...register('role')} value="supervisor" />
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
@@ -146,49 +114,20 @@ export default function RegisterPage() {
               {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
             </div>
 
-            {role === 'student' && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                  <input
-                    {...register('student_id')}
-                    type="text"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="e.g. 2021123456"
-                  />
-                  {errors.student_id && <p className="text-red-500 text-sm mt-1">{errors.student_id.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Programme</label>
-                  <input
-                    {...register('programme')}
-                    type="text"
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="e.g. CS230"
-                  />
-                  {errors.programme && <p className="text-red-500 text-sm mt-1">{errors.programme.message}</p>}
-                </div>
-              </>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Staff ID</label>
+              <input
+                {...register('staff_id')}
+                type="text"
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
+                placeholder="e.g. S001"
+              />
+              {errors.staff_id && <p className="text-red-500 text-sm mt-1">{errors.staff_id.message}</p>}
+            </div>
 
-            {role === 'supervisor' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Staff ID</label>
-                <input
-                  {...register('staff_id')}
-                  type="text"
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="e.g. S001"
-                />
-                {errors.staff_id && <p className="text-red-500 text-sm mt-1">{errors.staff_id.message}</p>}
-              </div>
-            )}
-
-            {role === 'supervisor' && (
-              <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
-                Supervisor accounts require coordinator approval before you can log in.
-              </p>
-            )}
+            <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+              Supervisor accounts require coordinator approval before you can log in.
+            </p>
 
             <button
               type="submit"
