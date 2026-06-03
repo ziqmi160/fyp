@@ -1,6 +1,6 @@
 import { User, SupervisorProfile, StudentProfile, Submission, SubmissionAttachment } from '../models/index.js';
 import { Op } from 'sequelize';
-import { getEmbedding, cosineSimilarity, recomputeSupervisorEmbedding } from '../services/embeddingService.js';
+import { recommendSupervisors, recomputeSupervisorEmbedding } from '../services/embeddingService.js';
 
 export const listSupervisors = async (req, res) => {
   try {
@@ -223,36 +223,26 @@ export const getRecommendations = async (req, res) => {
       return res.status(400).json({ success: false, error: 'No project description provided.' });
     }
 
-    const descEmbedding = await getEmbedding(description.trim());
-
     const profiles = await SupervisorProfile.findAll({
-      where: {
-        is_accepting: true,
-        expertise_embedding: { [Op.ne]: null }
-      },
+      where: { is_accepting: true },
       include: [{ model: User, attributes: ['id', 'name', 'email'], where: { is_active: true } }]
     });
 
-    const scored = profiles
+    const candidates = profiles
       .filter(p => p.current_student_count < p.max_students)
-      .map(p => {
-        const embedding = JSON.parse(p.expertise_embedding);
-        const score = cosineSimilarity(descEmbedding, embedding);
-        return {
-          id: p.id,
-          user_id: p.User.id,
-          name: p.User.name,
-          email: p.User.email,
-          staff_id: p.staff_id,
-          expertise: p.expertise,
-          max_students: p.max_students,
-          current_student_count: p.current_student_count,
-          is_accepting: p.is_accepting,
-          match_score: Math.round(score * 100) / 100
-        };
-      })
-      .sort((a, b) => b.match_score - a.match_score)
-      .slice(0, 3);
+      .map(p => ({
+        id: p.id,
+        user_id: p.User.id,
+        name: p.User.name,
+        email: p.User.email,
+        staff_id: p.staff_id,
+        expertise: p.expertise,
+        max_students: p.max_students,
+        current_student_count: p.current_student_count,
+        is_accepting: p.is_accepting,
+      }));
+
+    const scored = await recommendSupervisors(description, candidates, 3);
 
     res.json({ success: true, data: scored });
   } catch (error) {

@@ -12,9 +12,9 @@ const navItems = [
   { path: 'supervisor', label: 'My Supervisor', icon: UserCheck },
   { path: 'submissions', label: 'Submissions', icon: FileText },
   { path: 'meetings', label: 'Meetings', icon: Calendar },
-  { path: 'resources', label: 'Resource Library', icon: BookOpen },
-  { path: 'plagiarism-check', label: 'Plagiarism Check', icon: Shield },
-  { path: 'ethical-approval', label: 'Ethical Approval', icon: ClipboardCheck },
+  // { path: 'resources', label: 'Resource Library', icon: BookOpen }, // not needed for my project
+  // { path: 'plagiarism-check', label: 'Plagiarism Check', icon: Shield }, // not needed for my project
+  // { path: 'ethical-approval', label: 'Ethical Approval', icon: ClipboardCheck }, // not needed for my project
   { path: 'deliverables', label: 'Deliverables', icon: Package },
   { path: 'exhibition', label: 'Exhibition', icon: Award },
 ];
