@@ -8,6 +8,7 @@ import { Edit2, X, Upload, FileText, Download } from 'lucide-react';
 export default function CoordinatorStudents() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterClass, setFilterClass] = useState('');
   const [editingStudent, setEditingStudent] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
@@ -15,11 +16,20 @@ export default function CoordinatorStudents() {
   const csvInputRef = useRef(null);
   const queryClient = useQueryClient();
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ['coordinator-classes'],
+    queryFn: async () => {
+      const { data } = await api.get('/coordinator/classes');
+      return data.data || [];
+    },
+  });
+
   const { data: students = [] } = useQuery({
-    queryKey: ['coordinator-students', filterStatus],
+    queryKey: ['coordinator-students', filterStatus, filterClass],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filterStatus) params.set('status', filterStatus);
+      if (filterClass) params.set('class_id', filterClass);
       const { data } = await api.get(`/coordinator/students?${params}`);
       return data.data || [];
     },
@@ -45,6 +55,7 @@ export default function CoordinatorStudents() {
       setImportResult(res.data.data);
       setCsvFile(null);
       queryClient.invalidateQueries(['coordinator-students']);
+      queryClient.invalidateQueries(['coordinator-classes']);
       toast.success(res.data.message);
     },
     onError: (err) => toast.error(err.response?.data?.error || 'Import failed'),
@@ -60,16 +71,28 @@ export default function CoordinatorStudents() {
     }
   });
 
+  const assignClassMutation = useMutation({
+    mutationFn: ({ student_user_id, class_id }) =>
+      api.post('/coordinator/classes/assign-student', { student_user_id, class_id }),
+    onSuccess: () => {
+      toast.success('Class updated.');
+      queryClient.invalidateQueries(['coordinator-students']);
+      queryClient.invalidateQueries(['coordinator-classes']);
+      setEditingStudent(null);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to update class'),
+  });
+
   const filtered = students.filter(s =>
     !search || (s.name || '').toLowerCase().includes(search.toLowerCase()) ||
     (s.student_id || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const exportCsv = () => {
-    const headers = ['Name', 'Student No', 'Programme', 'Group', 'Supervisor', 'Phase', 'Examiner', 'FYP Status'];
+    const headers = ['Name', 'Student No', 'Programme', 'Class', 'Supervisor', 'Phase', 'Examiner', 'FYP Status'];
     const rows = filtered.map(s => [
-      s.name, s.student_id, s.programme, s.group_name, 
-      s.supervisor_name || 'None', s.current_phase || 'CSP600', 
+      s.name, s.student_id, s.programme, s.class_name || s.group_name,
+      s.supervisor_name || 'None', s.current_phase || 'CSP600',
       s.examiner_name || 'None', s.fyp_status
     ].join(','));
     const csv = [headers.join(','), ...rows].join('\n');
@@ -85,35 +108,56 @@ export default function CoordinatorStudents() {
     e.preventDefault();
     const formData = new FormData(e.target);
     const examiner_id = formData.get('examiner_id');
-    const payload = {
-      current_phase: formData.get('current_phase'),
-      examiner_id: examiner_id ? parseInt(examiner_id) : null,
-    };
-    updateMutation.mutate({ id: editingStudent.user_id, payload });
+    const class_id = formData.get('class_id');
+
+    // Examiner update
+    updateMutation.mutate({
+      id: editingStudent.user_id,
+      payload: { examiner_id: examiner_id ? parseInt(examiner_id) : null }
+    });
+
+    // Class update only if changed
+    const currentClassId = editingStudent.class_id ? String(editingStudent.class_id) : '';
+    if (class_id !== currentClassId) {
+      assignClassMutation.mutate({
+        student_user_id: editingStudent.user_id,
+        class_id: class_id ? parseInt(class_id) : null
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 justify-between">
         <h2 className="text-xl font-semibold">Student Management</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
-            className="px-4 py-2 rounded-lg border"
+            placeholder="Search name or ID..."
+            className="px-4 py-2 rounded-lg border text-sm"
           />
-          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-2 rounded-lg border">
+          <select
+            value={filterClass}
+            onChange={(e) => setFilterClass(e.target.value)}
+            className="px-4 py-2 rounded-lg border text-sm"
+          >
+            <option value="">All classes</option>
+            {classes.map(c => (
+              <option key={c.id} value={c.id}>{c.name} ({c.phase})</option>
+            ))}
+          </select>
+          <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-2 rounded-lg border text-sm">
             <option value="">All statuses</option>
             <option value="no_supervisor">No supervisor</option>
             <option value="pending_approval">Pending</option>
             <option value="active">Active</option>
             <option value="completed">Completed</option>
           </select>
-          <button onClick={() => { setShowImport(true); setImportResult(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition">
-            <Upload className="w-4 h-4" />Import Students
+          <button onClick={() => { setShowImport(true); setImportResult(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition text-sm">
+            <Upload className="w-4 h-4" />Import
           </button>
-          <button onClick={exportCsv} className="px-4 py-2 rounded-lg bg-primary text-white">Export CSV</button>
+          <button onClick={exportCsv} className="px-4 py-2 rounded-lg bg-primary text-white text-sm">Export CSV</button>
         </div>
       </div>
 
@@ -122,7 +166,7 @@ export default function CoordinatorStudents() {
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="text-left p-4 font-medium">Student</th>
-              <th className="text-left p-4 font-medium">Group</th>
+              <th className="text-left p-4 font-medium">Class</th>
               <th className="text-left p-4 font-medium">Supervisor</th>
               <th className="text-left p-4 font-medium">Phase</th>
               <th className="text-left p-4 font-medium">Examiner</th>
@@ -137,7 +181,12 @@ export default function CoordinatorStudents() {
                   <div className="font-medium text-secondary">{s.name}</div>
                   <div className="text-gray-500 text-xs">{s.student_id} | {s.programme}</div>
                 </td>
-                <td className="p-4">{s.group_name}</td>
+                <td className="p-4">
+                  {s.class_name || s.group_name
+                    ? <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">{s.class_name || s.group_name}</span>
+                    : <span className="text-gray-400 text-xs">Unassigned</span>
+                  }
+                </td>
                 <td className="p-4">{s.supervisor_name || '-'}</td>
                 <td className="p-4">
                   <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs font-semibold">
@@ -147,10 +196,10 @@ export default function CoordinatorStudents() {
                 <td className="p-4">{s.examiner_name || '-'}</td>
                 <td className="p-4"><StatusBadge status={s.fyp_status} /></td>
                 <td className="p-4 text-right">
-                  <button 
+                  <button
                     onClick={() => setEditingStudent(s)}
                     className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    title="Edit Phase & Examiner"
+                    title="Edit student"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
@@ -182,11 +231,13 @@ export default function CoordinatorStudents() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
                     <p className="font-medium mb-1">Required CSV columns:</p>
                     <code className="text-xs">student_id, name, email, programme, group</code>
-                    <p className="mt-2 text-xs">Initial password for each student will be their Student ID (matric number).</p>
+                    <p className="mt-2 text-xs">
+                      Initial password = student&apos;s matric number. Classes are auto-created from the <code>group</code> column.
+                    </p>
                   </div>
 
                   <a
-                    href="data:text/csv;charset=utf-8,student_id%2Cname%2Cemail%2Cprogramme%2Cgroup%0A2021123456%2CAhmad%20bin%20Ali%2Cahmad@student.uitm.edu.my%2CCS230%2CBITP3A"
+                    href="data:text/csv;charset=utf-8,student_id%2Cname%2Cemail%2Cprogramme%2Cgroup%0A2021123456%2CAhmad%20bin%20Ali%2Cahmad@student.uitm.edu.my%2CCS230%2C2305B"
                     download="students_template.csv"
                     className="flex items-center gap-2 text-sm text-primary hover:underline"
                   >
@@ -221,11 +272,11 @@ export default function CoordinatorStudents() {
                   )}
 
                   <div className="flex justify-end gap-3 pt-2">
-                    <button onClick={() => { setShowImport(false); setCsvFile(null); }} className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
+                    <button onClick={() => { setShowImport(false); setCsvFile(null); }} className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 text-sm">Cancel</button>
                     <button
                       onClick={() => importMutation.mutate(csvFile)}
                       disabled={!csvFile || importMutation.isPending}
-                      className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                      className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 text-sm"
                     >
                       {importMutation.isPending ? 'Importing...' : 'Import'}
                     </button>
@@ -253,7 +304,7 @@ export default function CoordinatorStudents() {
                       </ul>
                     </div>
                   )}
-                  <button onClick={() => { setShowImport(false); setImportResult(null); }} className="w-full py-2 rounded-lg bg-primary text-white">Done</button>
+                  <button onClick={() => { setShowImport(false); setImportResult(null); }} className="w-full py-2 rounded-lg bg-primary text-white text-sm">Done</button>
                 </div>
               )}
             </div>
@@ -265,32 +316,37 @@ export default function CoordinatorStudents() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-6 border-b flex justify-between items-center bg-gray-50">
-              <h3 className="font-semibold text-lg text-secondary">Update Phase & Examiner</h3>
+              <h3 className="font-semibold text-lg text-secondary">Edit Student</h3>
               <button onClick={() => setEditingStudent(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <form onSubmit={handleUpdate} className="p-6 space-y-4">
+              <p className="text-sm text-gray-500">
+                Student: <span className="font-semibold text-secondary">{editingStudent.name}</span>
+                <span className="ml-2 text-xs text-gray-400">{editingStudent.student_id}</span>
+              </p>
+
               <div>
-                <p className="text-sm text-gray-500 mb-4">Student: <span className="font-semibold text-secondary">{editingStudent.name}</span></p>
-                
-                <label className="block text-sm font-medium text-gray-700 mb-1">Current Phase</label>
-                <select 
-                  name="current_phase" 
-                  defaultValue={editingStudent.current_phase || 'CSP600'}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                <select
+                  name="class_id"
+                  defaultValue={editingStudent.class_id || ''}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
                 >
-                  <option value="CSP600">CSP600 (Project Formulation)</option>
-                  <option value="CSP650">CSP650 (Project)</option>
+                  <option value="">-- No class --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name} ({c.phase})</option>
+                  ))}
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Assign Examiner</label>
-                <select 
-                  name="examiner_id" 
+                <label className="block text-sm font-medium text-gray-700 mb-1">Examiner</label>
+                <select
+                  name="examiner_id"
                   defaultValue={editingStudent.examiner_id || ''}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm"
                 >
                   <option value="">-- No Examiner --</option>
                   {supervisors.map(sup => (
@@ -299,23 +355,23 @@ export default function CoordinatorStudents() {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Note: Supervisor cannot also be the examiner.</p>
+                <p className="text-xs text-gray-500 mt-1">The supervisor cannot also be the examiner.</p>
               </div>
 
               <div className="pt-4 flex gap-3 justify-end">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setEditingStudent(null)}
-                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium"
+                  className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 font-medium text-sm"
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
-                  disabled={updateMutation.isPending}
-                  className="px-4 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50"
+                <button
+                  type="submit"
+                  disabled={updateMutation.isPending || assignClassMutation.isPending}
+                  className="px-4 py-2 rounded-lg bg-primary text-white font-medium hover:bg-primary/90 disabled:opacity-50 text-sm"
                 >
-                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                  {updateMutation.isPending || assignClassMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

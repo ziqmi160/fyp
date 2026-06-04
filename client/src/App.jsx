@@ -11,10 +11,8 @@ import SupervisorMarketplace from './pages/student/SupervisorMarketplace';
 import MySupervisor from './pages/student/MySupervisor';
 import StudentSubmissions from './pages/student/StudentSubmissions';
 import StudentMeetings from './pages/student/StudentMeetings';
-import StudentProgress from './pages/student/StudentProgress';
 import FormSubmissions from './pages/student/FormSubmissions';
 import StudentPresentations from './pages/student/StudentPresentations';
-import StudentAmendments from './pages/student/StudentAmendments';
 import SupervisorDashboard from './pages/supervisor/SupervisorDashboard';
 import SupervisionRequests from './pages/supervisor/SupervisionRequests';
 import MyStudents from './pages/supervisor/MyStudents';
@@ -22,15 +20,18 @@ import SupervisorSubmissions from './pages/supervisor/SupervisorSubmissions';
 import SupervisorMeetings from './pages/supervisor/SupervisorMeetings';
 import SupervisorSettings from './pages/supervisor/SupervisorSettings';
 import CoordinatorDashboard from './pages/coordinator/CoordinatorDashboard';
+import ClassManagement from './pages/coordinator/ClassManagement';
+import CoordinatorTasks from './pages/coordinator/CoordinatorTasks';
+import StudentTasks from './pages/student/StudentTasks';
 import CoordinatorStudents from './pages/coordinator/CoordinatorStudents';
 import CoordinatorSupervisors from './pages/coordinator/CoordinatorSupervisors';
 import CoordinatorReports from './pages/coordinator/CoordinatorReports';
 import CoordinatorSchedules from './pages/coordinator/CoordinatorSchedules';
-import PhaseManagement from './pages/coordinator/PhaseManagement';
 import ExaminerAssignment from './pages/coordinator/ExaminerAssignment';
 import PresentationSessions from './pages/coordinator/PresentationSessions';
 import EvaluationForms from './pages/supervisor/EvaluationForms';
 import AmendmentManagement from './pages/supervisor/AmendmentManagement';
+import SupervisorPresentations from './pages/supervisor/SupervisorPresentations';
 import ResourceLibraryPage from './pages/student/ResourceLibraryPage';
 import PlagiarismCheckPage from './pages/student/PlagiarismCheckPage';
 import EthicalApprovalPage from './pages/student/EthicalApprovalPage';
@@ -70,14 +71,13 @@ export default function App() {
       <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="tasks" element={<StudentTasks />} />
         <Route path="supervisors" element={<SupervisorMarketplace />} />
         <Route path="supervisor" element={<MySupervisor />} />
         <Route path="submissions" element={<StudentSubmissions />} />
         <Route path="meetings" element={<StudentMeetings />} />
-        <Route path="progress" element={<StudentProgress />} />
         <Route path="forms" element={<FormSubmissions />} />
         <Route path="presentations" element={<StudentPresentations />} />
-        <Route path="amendments" element={<StudentAmendments />} />
         <Route path="resources" element={<ResourceLibraryPage />} />
         <Route path="plagiarism-check" element={<PlagiarismCheckPage />} />
         <Route path="ethical-approval" element={<EthicalApprovalPage />} />
@@ -93,16 +93,18 @@ export default function App() {
         <Route path="meetings" element={<SupervisorMeetings />} />
         <Route path="evaluation-forms" element={<EvaluationForms />} />
         <Route path="amendments" element={<AmendmentManagement />} />
+        <Route path="presentations" element={<SupervisorPresentations />} />
         <Route path="settings" element={<SupervisorSettings />} />
       </Route>
       <Route path="/coordinator" element={<ProtectedRoute allowedRoles={['coordinator']}><CoordinatorLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<CoordinatorDashboard />} />
+        <Route path="classes" element={<ClassManagement />} />
+        <Route path="tasks" element={<CoordinatorTasks />} />
         <Route path="students" element={<CoordinatorStudents />} />
         <Route path="supervisors" element={<CoordinatorSupervisors />} />
         <Route path="schedules" element={<CoordinatorSchedules />} />
         <Route path="reports" element={<CoordinatorReports />} />
-        <Route path="phases" element={<PhaseManagement />} />
         <Route path="examiner-assignments" element={<ExaminerAssignment />} />
         <Route path="presentation-sessions" element={<PresentationSessions />} />
         <Route path="resource-library" element={<ResourceLibraryManagementPage />} />

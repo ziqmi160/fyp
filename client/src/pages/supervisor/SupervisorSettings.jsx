@@ -5,21 +5,16 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 const EXPERTISE_CATEGORIES = [
-  'Artificial Intelligence (AI)',
-  'Machine Learning (ML)',
+  'Machine Learning & Deep Learning',
+  'Data Science & Analytics',
+  'Artificial Intelligence',
   'Software Engineering',
-  'Cybersecurity',
-  'Data Science',
-  'Cloud Computing',
-  'Database Management',
-  'Computer Networks',
-  'Web Development',
-  'Mobile App Development',
-  'Human-Computer Interaction (HCI)',
-  'Computer Graphics & Visualization',
-  'Video Game Development',
-  'Embedded Systems',
-  'Theory of Computing & Algorithms',
+  'Natural Language Processing',
+  'Learning Technology & HCI',
+  'Information Systems & Database',
+  'Computer Vision & Image Processing',
+  'Web & Mobile Development',
+  'Cybersecurity & Cryptography',
 ];
 
 export default function SupervisorSettings() {

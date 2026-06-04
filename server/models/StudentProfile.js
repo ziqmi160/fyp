@@ -24,6 +24,11 @@ const StudentProfile = sequelize.define('StudentProfile', {
   group_name: {
     type: DataTypes.STRING(10)
   },
+  class_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'classes', key: 'id' }
+  },
   current_supervisor_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -47,6 +52,14 @@ const StudentProfile = sequelize.define('StudentProfile', {
     defaultValue: 'no_supervisor'
   },
   project_description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  title_status: {
+    type: DataTypes.ENUM('not_submitted', 'pending', 'approved', 'rejected'),
+    defaultValue: 'not_submitted'
+  },
+  title_feedback: {
     type: DataTypes.TEXT,
     allowNull: true
   }

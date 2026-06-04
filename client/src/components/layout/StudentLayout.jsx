@@ -1,37 +1,29 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { LayoutDashboard, Users, UserCheck, FileText, Calendar, TrendingUp, Video, Edit3, BookOpen, Shield, ClipboardCheck, Package, Award } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, FileText, Calendar, Video, Package, Award, ClipboardList } from 'lucide-react';
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: 'progress', label: 'Progress Tracker', icon: TrendingUp },
+  { path: 'tasks', label: 'My Tasks', icon: ClipboardList },
   { path: 'forms', label: 'Evaluation Forms', icon: FileText },
-  { path: 'presentations', label: 'Presentations', icon: Video },
-  { path: 'amendments', label: 'Amendments', icon: Edit3 },
+  { path: 'presentations', label: 'Presentations & Amendments', icon: Video },
   { path: 'supervisors', label: 'Supervisor Marketplace', icon: Users },
   { path: 'supervisor', label: 'My Supervisor', icon: UserCheck },
   { path: 'submissions', label: 'Submissions', icon: FileText },
   { path: 'meetings', label: 'Meetings', icon: Calendar },
-  // { path: 'resources', label: 'Resource Library', icon: BookOpen }, // not needed for my project
-  // { path: 'plagiarism-check', label: 'Plagiarism Check', icon: Shield }, // not needed for my project
-  // { path: 'ethical-approval', label: 'Ethical Approval', icon: ClipboardCheck }, // not needed for my project
   { path: 'deliverables', label: 'Deliverables', icon: Package },
-  { path: 'exhibition', label: 'Exhibition', icon: Award },
+  // { path: 'exhibition', label: 'Exhibition', icon: Award }, not needed for my project
 ];
 
 const titles = {
   dashboard: 'Dashboard',
-  progress: 'Progress Tracker',
+  tasks: 'My Tasks',
   forms: 'Evaluation Forms',
-  presentations: 'Presentations',
-  amendments: 'Amendments',
+  presentations: 'Presentations & Amendments',
   supervisors: 'Supervisor Marketplace',
   supervisor: 'My Supervisor',
   submissions: 'Submissions',
   meetings: 'Meetings',
-  resources: 'Resource Library',
-  'plagiarism-check': 'Plagiarism Check',
-  'ethical-approval': 'Ethical Approval',
   deliverables: 'Deliverables',
   exhibition: 'Exhibition',
 };

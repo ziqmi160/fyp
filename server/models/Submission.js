@@ -56,6 +56,11 @@ const Submission = sequelize.define('Submission', {
   supervisor_report_approved_at: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  task_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'tasks', key: 'id' }
   }
 }, {
   tableName: 'submissions',

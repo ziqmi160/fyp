@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { User, StudentProfile, SupervisorProfile, Submission, SupervisionRequest, PresentationSchedule, Evaluation } from '../models/index.js';
+import { User, Class, StudentProfile, SupervisorProfile, Submission, SupervisionRequest, PresentationSchedule, Evaluation } from '../models/index.js';
 import { generateProgressReport } from '../services/pdfService.js';
 import path from 'path';
 import fs from 'fs';
@@ -82,17 +82,23 @@ export const getStats = async (req, res) => {
 
 export const getStudents = async (req, res) => {
   try {
-    const { search, group, programme, status, supervisor } = req.query;
+    const { search, group, class_id, programme, status, supervisor } = req.query;
 
     const where = {};
-    if (group) where.group_name = group;
+    if (req.user.coordinator_phase) where.current_phase = req.user.coordinator_phase;
+    if (class_id) where.class_id = class_id;
+    else if (group) where.group_name = group;
     if (programme) where.programme = programme;
     if (status) where.fyp_status = status;
     if (supervisor) where.current_supervisor_id = supervisor;
 
     const profiles = await StudentProfile.findAll({
       where,
-      include: ['supervisor', 'examiner']
+      include: [
+        'supervisor',
+        'examiner',
+        { model: Class, as: 'class', attributes: ['id', 'name', 'phase'] }
+      ]
     });
 
     const userIds = profiles.map(p => p.user_id);
@@ -107,7 +113,8 @@ export const getStudents = async (req, res) => {
       name: userMap[p.user_id]?.name,
       email: userMap[p.user_id]?.email,
       supervisor_name: p.supervisor?.name,
-      examiner_name: p.examiner?.name
+      examiner_name: p.examiner?.name,
+      class_name: p.class?.name || p.group_name
     }));
 
     if (search) {
@@ -287,7 +294,7 @@ export const generateReport = async (req, res) => {
 export const updateStudentPhaseAndExaminer = async (req, res) => {
   try {
     const { id } = req.params;
-    const { current_phase, examiner_id } = req.body;
+    const { examiner_id } = req.body;
 
     const profile = await StudentProfile.findOne({ where: { user_id: id } });
 
@@ -296,7 +303,6 @@ export const updateStudentPhaseAndExaminer = async (req, res) => {
     }
 
     const updates = {};
-    if (current_phase) updates.current_phase = current_phase;
     if (examiner_id !== undefined) updates.examiner_id = examiner_id;
 
     await profile.update(updates);
@@ -423,6 +429,24 @@ export const importStudents = async (req, res) => {
     const created = [];
     const skipped = [];
 
+    // Cache class lookups within this import batch to avoid repeated queries.
+    const classCache = {};
+    const resolveClass = async (groupName) => {
+      if (!groupName) return null;
+      if (classCache[groupName] !== undefined) return classCache[groupName];
+      let cls = await Class.findOne({ where: { name: groupName, coordinator_id: req.user.id } });
+      if (!cls) {
+        cls = await Class.create({
+          name: groupName,
+          phase: req.user.coordinator_phase || 'CSP600',
+          coordinator_id: req.user.id,
+          is_active: true
+        });
+      }
+      classCache[groupName] = cls.id;
+      return cls.id;
+    };
+
     for (const row of rows) {
       const { student_id, name, email, programme, group } = row;
 
@@ -449,11 +473,14 @@ export const importStudents = async (req, res) => {
         approval_status: null
       });
 
+      const classId = await resolveClass(group);
+
       await StudentProfile.create({
         user_id: user.id,
         student_id,
         programme: programme || null,
-        group_name: group || null
+        group_name: group || null,
+        class_id: classId
       });
 
       created.push({ student_id, name, email: email.toLowerCase() });
@@ -466,6 +493,200 @@ export const importStudents = async (req, res) => {
     });
   } catch (error) {
     console.error('Import students error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+// ── Class management ──────────────────────────────────────────────────────────
+
+export const getClasses = async (req, res) => {
+  try {
+    const where = {};
+    // Coordinators only see classes assigned to them (or all if super_admin/no filter)
+    if (req.user.role === 'coordinator') where.coordinator_id = req.user.id;
+
+    const classes = await Class.findAll({
+      where,
+      include: [
+        { model: User, as: 'coordinator', attributes: ['id', 'name', 'email'] }
+      ],
+      order: [['name', 'ASC']]
+    });
+
+    // Attach student counts
+    const withCounts = await Promise.all(classes.map(async (c) => {
+      const count = await StudentProfile.count({ where: { class_id: c.id } });
+      return { ...c.toJSON(), student_count: count };
+    }));
+
+    res.json({ success: true, data: withCounts });
+  } catch (error) {
+    console.error('Get classes error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const createClass = async (req, res) => {
+  try {
+    const { name, phase, academic_year, semester } = req.body;
+    if (!name || !phase) {
+      return res.status(400).json({ success: false, error: 'name and phase are required.' });
+    }
+
+    const existing = await Class.findOne({
+      where: { name, phase, coordinator_id: req.user.id }
+    });
+    if (existing) {
+      return res.status(409).json({ success: false, error: 'A class with this name already exists for this phase.' });
+    }
+
+    const cls = await Class.create({
+      name,
+      phase,
+      academic_year: academic_year || null,
+      semester: semester || null,
+      coordinator_id: req.user.id,
+      is_active: true
+    });
+
+    res.status(201).json({ success: true, data: cls, message: 'Class created.' });
+  } catch (error) {
+    console.error('Create class error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const updateClass = async (req, res) => {
+  try {
+    const cls = await Class.findOne({ where: { id: req.params.id, coordinator_id: req.user.id } });
+    if (!cls) return res.status(404).json({ success: false, error: 'Class not found.' });
+
+    const { name, phase, academic_year, semester, is_active } = req.body;
+    await cls.update({
+      name: name ?? cls.name,
+      phase: phase ?? cls.phase,
+      academic_year: academic_year ?? cls.academic_year,
+      semester: semester ?? cls.semester,
+      is_active: is_active ?? cls.is_active
+    });
+
+    res.json({ success: true, data: cls, message: 'Class updated.' });
+  } catch (error) {
+    console.error('Update class error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const deleteClass = async (req, res) => {
+  try {
+    const cls = await Class.findOne({ where: { id: req.params.id, coordinator_id: req.user.id } });
+    if (!cls) return res.status(404).json({ success: false, error: 'Class not found.' });
+
+    const studentCount = await StudentProfile.count({ where: { class_id: cls.id } });
+    if (studentCount > 0) {
+      return res.status(400).json({ success: false, error: `Cannot delete: ${studentCount} student(s) are in this class. Reassign them first.` });
+    }
+
+    await cls.destroy();
+    res.json({ success: true, message: 'Class deleted.' });
+  } catch (error) {
+    console.error('Delete class error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+// ── FYP title review ──────────────────────────────────────────────────────────
+
+export const getPendingTitles = async (req, res) => {
+  try {
+    // Find students in classes that belong to this coordinator
+    const classes = await Class.findAll({
+      where: { coordinator_id: req.user.id },
+      attributes: ['id']
+    });
+    const classIds = classes.map(c => c.id);
+
+    const profiles = await StudentProfile.findAll({
+      where: {
+        title_status: 'pending',
+        ...(classIds.length > 0 ? { class_id: classIds } : {})
+      },
+      include: [
+        { model: User, as: 'studentUser', attributes: ['id', 'name', 'email'] },
+        { model: Class, as: 'class', attributes: ['id', 'name', 'phase'] }
+      ],
+      order: [['updated_at', 'ASC']]
+    });
+
+    const result = profiles.map(p => ({
+      user_id: p.user_id,
+      student_id: p.student_id,
+      name: p.studentUser?.name,
+      email: p.studentUser?.email,
+      fyp_title: p.fyp_title,
+      project_description: p.project_description,
+      class_name: p.class?.name,
+      submitted_at: p.updated_at
+    }));
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Get pending titles error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const reviewTitle = async (req, res) => {
+  try {
+    const { id } = req.params; // user_id of the student
+    const { action, feedback } = req.body;
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ success: false, error: 'action must be approve or reject.' });
+    }
+    if (action === 'reject' && !feedback?.trim()) {
+      return res.status(400).json({ success: false, error: 'Feedback is required when rejecting.' });
+    }
+
+    const profile = await StudentProfile.findOne({ where: { user_id: id } });
+    if (!profile) return res.status(404).json({ success: false, error: 'Student not found.' });
+    if (profile.title_status !== 'pending') {
+      return res.status(400).json({ success: false, error: 'No pending title to review.' });
+    }
+
+    await profile.update({
+      title_status: action === 'approve' ? 'approved' : 'rejected',
+      title_feedback: action === 'reject' ? feedback.trim() : null
+    });
+
+    res.json({ success: true, message: `Title ${action === 'approve' ? 'approved' : 'rejected'}.` });
+  } catch (error) {
+    console.error('Review title error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const assignStudentToClass = async (req, res) => {
+  try {
+    const { student_user_id, class_id } = req.body;
+    if (!student_user_id) {
+      return res.status(400).json({ success: false, error: 'student_user_id is required.' });
+    }
+
+    const profile = await StudentProfile.findOne({ where: { user_id: student_user_id } });
+    if (!profile) return res.status(404).json({ success: false, error: 'Student not found.' });
+
+    if (class_id) {
+      const cls = await Class.findOne({ where: { id: class_id, coordinator_id: req.user.id } });
+      if (!cls) return res.status(404).json({ success: false, error: 'Class not found.' });
+      await profile.update({ class_id, group_name: cls.name });
+    } else {
+      await profile.update({ class_id: null });
+    }
+
+    res.json({ success: true, message: 'Student class updated.' });
+  } catch (error) {
+    console.error('Assign student to class error:', error);
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };

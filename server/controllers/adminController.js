@@ -3,10 +3,14 @@ import { User, SupervisorProfile } from '../models/index.js';
 
 export const createCoordinator = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, coordinator_phase } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, error: 'Name, email, and password are required.' });
+    if (!name || !email || !password || !coordinator_phase) {
+      return res.status(400).json({ success: false, error: 'Name, email, password, and phase are required.' });
+    }
+
+    if (!['CSP600', 'CSP650'].includes(coordinator_phase)) {
+      return res.status(400).json({ success: false, error: 'Phase must be CSP600 or CSP650.' });
     }
 
     const existing = await User.findOne({ where: { email: email.toLowerCase() } });
@@ -21,7 +25,8 @@ export const createCoordinator = async (req, res) => {
       password: hashedPassword,
       role: 'coordinator',
       is_active: true,
-      approval_status: null
+      approval_status: null,
+      coordinator_phase
     });
 
     res.status(201).json({
@@ -78,6 +83,28 @@ export const reactivateCoordinator = async (req, res) => {
     res.json({ success: true, message: 'Coordinator reactivated.' });
   } catch (error) {
     console.error('Reactivate coordinator error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const updateCoordinatorPhase = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { coordinator_phase } = req.body;
+
+    if (!['CSP600', 'CSP650'].includes(coordinator_phase)) {
+      return res.status(400).json({ success: false, error: 'Phase must be CSP600 or CSP650.' });
+    }
+
+    const user = await User.findOne({ where: { id, role: 'coordinator' } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Coordinator not found.' });
+    }
+
+    await user.update({ coordinator_phase });
+    res.json({ success: true, message: 'Coordinator phase updated.' });
+  } catch (error) {
+    console.error('Update coordinator phase error:', error);
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };

@@ -33,6 +33,11 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('pending', 'approved', 'rejected'),
     allowNull: true,
     defaultValue: null
+  },
+  coordinator_phase: {
+    type: DataTypes.ENUM('CSP600', 'CSP650'),
+    allowNull: true,
+    defaultValue: null
   }
 }, {
   tableName: 'users',

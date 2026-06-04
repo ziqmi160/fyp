@@ -30,6 +30,7 @@ import plagiarismCheckRoutes from './routes/plagiarismCheckRoutes.js';
 import ethicalApprovalRoutes from './routes/ethicalApprovalRoutes.js';
 import deliverableRoutes from './routes/deliverableRoutes.js';
 import exhibitionRoutes from './routes/exhibitionRoutes.js';
+import taskRoutes from './routes/taskRoutes.js';
 import { warmUp } from './services/embeddingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,6 +73,7 @@ app.use('/api/plagiarism-checks', plagiarismCheckRoutes);
 app.use('/api/ethical-approval', ethicalApprovalRoutes);
 app.use('/api/deliverables', deliverableRoutes);
 app.use('/api/exhibitions', exhibitionRoutes);
+app.use('/api/tasks', taskRoutes);
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

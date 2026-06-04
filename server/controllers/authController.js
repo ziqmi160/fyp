@@ -56,7 +56,7 @@ export const login = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, student_id, staff_id, programme } = req.body;
+    const { name, email, password, role, student_id, staff_id, programme, expertise } = req.body;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ success: false, error: 'Name, email, password and role are required.' });
@@ -103,7 +103,7 @@ export const register = async (req, res) => {
       if (!staff_id) {
         return res.status(400).json({ success: false, error: 'Staff ID is required.' });
       }
-      await SupervisorProfile.create({ user_id: user.id, staff_id });
+      await SupervisorProfile.create({ user_id: user.id, staff_id, expertise: Array.isArray(expertise) ? expertise : [] });
       return res.status(201).json({
         success: true,
         data: null,

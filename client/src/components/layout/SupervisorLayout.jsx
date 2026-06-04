@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { LayoutDashboard, Inbox, Users, FileText, Calendar, Settings, ClipboardList, Edit3 } from 'lucide-react';
+import { LayoutDashboard, Inbox, Users, FileText, Calendar, Settings, ClipboardList, Edit3, Video } from 'lucide-react';
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -9,19 +9,21 @@ const navItems = [
   { path: 'submissions', label: 'Submissions', icon: FileText },
   { path: 'evaluation-forms', label: 'Evaluation Forms', icon: ClipboardList },
   { path: 'amendments', label: 'Amendments', icon: Edit3 },
+  { path: 'presentations', label: 'Presentations', icon: Video },
   { path: 'meetings', label: 'Meetings', icon: Calendar },
   { path: 'settings', label: 'Settings', icon: Settings },
 ];
 
-const titles = { 
-  dashboard: 'Dashboard', 
-  requests: 'Requests', 
-  students: 'My Students', 
-  submissions: 'Submissions', 
+const titles = {
+  dashboard: 'Dashboard',
+  requests: 'Requests',
+  students: 'My Students',
+  submissions: 'Submissions',
   'evaluation-forms': 'Evaluation Forms',
   amendments: 'Amendments',
-  meetings: 'Meetings', 
-  settings: 'Settings' 
+  presentations: 'Presentations',
+  meetings: 'Meetings',
+  settings: 'Settings'
 };
 
 export default function SupervisorLayout() {

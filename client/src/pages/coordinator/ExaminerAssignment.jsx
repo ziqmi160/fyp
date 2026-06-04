@@ -1,32 +1,128 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
-import { Plus, Edit2, Trash2, User, Users, Search } from 'lucide-react';
+import { useAuth } from '../../store/AuthContext';
+import { Plus, Edit2, Trash2, User, Users, Search, ChevronDown, X } from 'lucide-react';
+
+function StudentCombobox({ value, onChange }) {
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  const { data: students = [] } = useQuery({
+    queryKey: ['coordinator-students-all'],
+    queryFn: async () => {
+      const { data } = await api.get('/coordinator/students');
+      return data.data || [];
+    },
+  });
+
+  const selected = students.find(s => s.user_id === value);
+
+  const filtered = query.trim()
+    ? students.filter(s =>
+        s.name?.toLowerCase().includes(query.toLowerCase()) ||
+        s.student_id?.toLowerCase().includes(query.toLowerCase())
+      )
+    : students;
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setQuery('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (student) => {
+    onChange(student.user_id);
+    setOpen(false);
+    setQuery('');
+  };
+
+  const handleClear = (e) => {
+    e.stopPropagation();
+    onChange('');
+    setQuery('');
+  };
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div
+        className="flex items-center w-full px-3 py-2 border border-gray-300 rounded-lg cursor-text focus-within:ring-2 focus-within:ring-primary focus-within:border-transparent bg-white"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="w-4 h-4 text-gray-400 flex-shrink-0 mr-2" />
+        {selected && !open ? (
+          <span className="flex-1 text-sm truncate">
+            {selected.name}
+            <span className="ml-2 text-gray-400 text-xs">{selected.student_id}</span>
+          </span>
+        ) : (
+          <input
+            type="text"
+            className="flex-1 outline-none text-sm bg-transparent"
+            placeholder={selected ? `${selected.name}` : 'Search by name or student ID...'}
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+          />
+        )}
+        {selected
+          ? <X className="w-4 h-4 text-gray-400 hover:text-gray-600 flex-shrink-0 ml-1" onClick={handleClear} />
+          : <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-1" />
+        }
+      </div>
+
+      {open && (
+        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+          {filtered.length === 0 ? (
+            <li className="px-4 py-3 text-sm text-gray-500">No students found</li>
+          ) : (
+            filtered.map(s => (
+              <li
+                key={s.user_id}
+                onMouseDown={() => handleSelect(s)}
+                className={`flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${
+                  value === s.user_id ? 'bg-primary/5 text-primary font-medium' : ''
+                }`}
+              >
+                <span>{s.name}</span>
+                <span className="text-gray-400 text-xs ml-4">{s.student_id}</span>
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function ExaminerAssignment() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterPhase, setFilterPhase] = useState('');
   const [filterType, setFilterType] = useState('');
-  
+
   const [formData, setFormData] = useState({
     student_id: '',
     examiner_id: '',
-    phase: 'CSP600',
     assignment_type: 'proposal'
   });
 
   const { data: assignments = [], isLoading } = useQuery({
-    queryKey: ['examiner-assignments', filterPhase, filterType],
+    queryKey: ['examiner-assignments', filterType],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filterPhase) params.append('phase', filterPhase);
       if (filterType) params.append('assignment_type', filterType);
-      
+
       const { data } = await api.get(`/examiner-assignments?${params}`);
-      return data.data || [];
+      return data || [];
     },
   });
 
@@ -34,7 +130,7 @@ export default function ExaminerAssignment() {
     queryKey: ['available-examiners'],
     queryFn: async () => {
       const { data } = await api.get('/examiner-assignments/available');
-      return data.data || [];
+      return data || [];
     },
   });
 
@@ -49,7 +145,6 @@ export default function ExaminerAssignment() {
       setFormData({
         student_id: '',
         examiner_id: '',
-        phase: 'CSP600',
         assignment_type: 'proposal'
       });
     },
@@ -77,6 +172,7 @@ export default function ExaminerAssignment() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.student_id) return;
     if (editingAssignment) {
       updateAssignmentMutation.mutate({ id: editingAssignment.id, ...formData });
     } else {
@@ -89,7 +185,6 @@ export default function ExaminerAssignment() {
     setFormData({
       student_id: assignment.student_id,
       examiner_id: assignment.examiner_id,
-      phase: assignment.phase,
       assignment_type: assignment.assignment_type
     });
     setShowCreateForm(true);
@@ -140,7 +235,7 @@ export default function ExaminerAssignment() {
 
       {/* Filters */}
       <div className="bg-card rounded-xl p-4 border">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -151,16 +246,6 @@ export default function ExaminerAssignment() {
               className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
-          
-          <select
-            value={filterPhase}
-            onChange={(e) => setFilterPhase(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="">All Phases</option>
-            <option value="CSP600">CSP600</option>
-            <option value="CSP650">CSP650</option>
-          </select>
 
           <select
             value={filterType}
@@ -172,8 +257,12 @@ export default function ExaminerAssignment() {
             <option value="final">Final</option>
           </select>
 
-          <div className="text-sm text-gray-600 flex items-center">
-            {filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? 's' : ''} found
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">Phase:</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+              {user?.coordinator_phase || '—'}
+            </span>
+            <span className="text-sm text-gray-400">{filteredAssignments.length} assignment{filteredAssignments.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
       </div>
@@ -189,16 +278,15 @@ export default function ExaminerAssignment() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Student ID
+                  Student
                 </label>
-                <input
-                  type="number"
+                <StudentCombobox
                   value={formData.student_id}
-                  onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-                  placeholder="Enter student user ID"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                  required
+                  onChange={(id) => setFormData({ ...formData, student_id: id })}
                 />
+                {!formData.student_id && (
+                  <p className="mt-1 text-xs text-red-500 hidden peer-invalid:block">Please select a student</p>
+                )}
               </div>
 
               <div>
@@ -214,7 +302,7 @@ export default function ExaminerAssignment() {
                   <option value="">Select an examiner</option>
                   {availableExaminers.map((examiner) => (
                     <option key={examiner.id} value={examiner.id}>
-                      {examiner.name} - {examiner.SupervisorProfile?.specialization || 'No specialization'}
+                      {examiner.name} - {examiner.SupervisorProfile?.expertise?.join(', ') || 'No expertise listed'}
                     </option>
                   ))}
                 </select>
@@ -222,18 +310,10 @@ export default function ExaminerAssignment() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phase
-                  </label>
-                  <select
-                    value={formData.phase}
-                    onChange={(e) => setFormData({ ...formData, phase: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    required
-                  >
-                    <option value="CSP600">CSP600</option>
-                    <option value="CSP650">CSP650</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phase</label>
+                  <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700 font-medium">
+                    {user?.coordinator_phase || '—'}
+                  </div>
                 </div>
 
                 <div>
@@ -261,7 +341,6 @@ export default function ExaminerAssignment() {
                     setFormData({
                       student_id: '',
                       examiner_id: '',
-                      phase: 'CSP600',
                       assignment_type: 'proposal'
                     });
                   }}
@@ -271,7 +350,7 @@ export default function ExaminerAssignment() {
                 </button>
                 <button
                   type="submit"
-                  disabled={createAssignmentMutation.isLoading || updateAssignmentMutation.isLoading}
+                  disabled={createAssignmentMutation.isLoading || updateAssignmentMutation.isLoading || !formData.student_id}
                   className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition disabled:opacity-50"
                 >
                   {editingAssignment ? 'Update' : 'Create'} Assignment
@@ -299,7 +378,7 @@ export default function ExaminerAssignment() {
                     <th className="text-left py-3 px-4">Phase</th>
                     <th className="text-left py-3 px-4">Type</th>
                     <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-left py-3 px-4">Assigned By</th>
+                    {/* <th className="text-left py-3 px-4">Assigned By</th> */}
                     <th className="text-left py-3 px-4">Actions</th>
                   </tr>
                 </thead>
@@ -339,9 +418,9 @@ export default function ExaminerAssignment() {
                           {assignment.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
+                      {/* <td className="py-3 px-4 text-sm text-gray-600">
                         {assignment.assigner?.name}
-                      </td>
+                      </td> */}
                       <td className="py-3 px-4">
                         <div className="flex space-x-2">
                           <button

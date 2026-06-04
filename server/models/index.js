@@ -1,5 +1,7 @@
 import sequelize from '../config/database.js';
 import User from './User.js';
+import Class from './Class.js';
+import Task from './Task.js';
 import StudentProfile from './StudentProfile.js';
 import SupervisorProfile from './SupervisorProfile.js';
 import SupervisionRequest from './SupervisionRequest.js';
@@ -24,6 +26,20 @@ import Deliverable from './Deliverable.js';
 import Exhibition from './Exhibition.js';
 import ExhibitionAttendance from './ExhibitionAttendance.js';
 const ConsultationMeeting = ConsultationMeetingFactory(sequelize);
+
+// Class associations
+Class.belongsTo(User, { foreignKey: 'coordinator_id', as: 'coordinator' });
+User.hasMany(Class, { foreignKey: 'coordinator_id', as: 'classes' });
+Class.hasMany(StudentProfile, { foreignKey: 'class_id', as: 'students' });
+StudentProfile.belongsTo(Class, { foreignKey: 'class_id', as: 'class' });
+
+// Task associations
+Task.belongsTo(Class, { foreignKey: 'class_id', as: 'class' });
+Class.hasMany(Task, { foreignKey: 'class_id', as: 'tasks' });
+Task.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+User.hasMany(Task, { foreignKey: 'created_by', as: 'createdTasks' });
+Task.hasMany(Submission, { foreignKey: 'task_id', as: 'submissions' });
+Submission.belongsTo(Task, { foreignKey: 'task_id', as: 'task' });
 
 // User associations
 User.hasOne(StudentProfile, { foreignKey: 'user_id' });
@@ -132,6 +148,8 @@ User.hasMany(ExhibitionAttendance, { foreignKey: 'student_id' });
 export {
   sequelize,
   User,
+  Class,
+  Task,
   StudentProfile,
   SupervisorProfile,
   SupervisionRequest,

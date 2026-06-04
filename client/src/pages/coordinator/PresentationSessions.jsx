@@ -1,22 +1,22 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { useAuth } from '../../store/AuthContext';
 import { Plus, Edit2, Trash2, Calendar, Clock, MapPin, Users, UserPlus } from 'lucide-react';
 
 export default function PresentationSessions() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSlotForm, setShowSlotForm] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
   const [selectedSession, setSelectedSession] = useState(null);
-  const [filterPhase, setFilterPhase] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  
+
   const [sessionFormData, setSessionFormData] = useState({
     title: '',
     session_type: 'proposal',
-    phase: 'CSP600',
     date: '',
     start_time: '',
     end_time: '',
@@ -35,10 +35,9 @@ export default function PresentationSessions() {
   });
 
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ['presentation-sessions', filterPhase, filterType, filterStatus],
+    queryKey: ['presentation-sessions', filterType, filterStatus],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (filterPhase) params.append('phase', filterPhase);
       if (filterType) params.append('session_type', filterType);
       if (filterStatus) params.append('status', filterStatus);
       
@@ -115,7 +114,6 @@ export default function PresentationSessions() {
     setSessionFormData({
       title: '',
       session_type: 'proposal',
-      phase: 'CSP600',
       date: '',
       start_time: '',
       end_time: '',
@@ -155,7 +153,6 @@ export default function PresentationSessions() {
     setSessionFormData({
       title: session.title,
       session_type: session.session_type,
-      phase: session.phase,
       date: session.date?.split('T')[0],
       start_time: session.start_time,
       end_time: session.end_time,
@@ -223,17 +220,7 @@ export default function PresentationSessions() {
 
       {/* Filters */}
       <div className="bg-card rounded-xl p-4 border">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <select
-            value={filterPhase}
-            onChange={(e) => setFilterPhase(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-          >
-            <option value="">All Phases</option>
-            <option value="CSP600">CSP600</option>
-            <option value="CSP650">CSP650</option>
-          </select>
-
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
@@ -256,6 +243,13 @@ export default function PresentationSessions() {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Phase:</span>
+            <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full">
+              {user?.coordinator_phase || '—'}
+            </span>
+          </div>
 
           <div className="text-sm text-gray-600 flex items-center">
             {sessions.length} session{sessions.length !== 1 ? 's' : ''} found
@@ -304,18 +298,10 @@ export default function PresentationSessions() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phase
-                  </label>
-                  <select
-                    value={sessionFormData.phase}
-                    onChange={(e) => setSessionFormData({ ...sessionFormData, phase: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    required
-                  >
-                    <option value="CSP600">CSP600</option>
-                    <option value="CSP650">CSP650</option>
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phase</label>
+                  <div className="px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm text-gray-700 font-medium">
+                    {user?.coordinator_phase || '—'}
+                  </div>
                 </div>
               </div>
 

@@ -1,12 +1,12 @@
-import { ExaminerAssignment, User, StudentProfile } from '../models/index.js';
+import { ExaminerAssignment, User, StudentProfile, SupervisorProfile } from '../models/index.js';
 import { Op } from 'sequelize';
 
 export const getExaminerAssignments = async (req, res) => {
   try {
-    const { phase, assignment_type } = req.query;
+    const { assignment_type } = req.query;
     const whereClause = {};
-    
-    if (phase) whereClause.phase = phase;
+
+    if (req.user.coordinator_phase) whereClause.phase = req.user.coordinator_phase;
     if (assignment_type) whereClause.assignment_type = assignment_type;
 
     const assignments = await ExaminerAssignment.findAll({
@@ -43,8 +43,13 @@ export const getExaminerAssignments = async (req, res) => {
 
 export const createExaminerAssignment = async (req, res) => {
   try {
-    const { student_id, examiner_id, phase, assignment_type } = req.body;
+    const { student_id, examiner_id, assignment_type } = req.body;
     const assigned_by = req.user.id;
+    const phase = req.user.coordinator_phase;
+
+    if (!phase) {
+      return res.status(400).json({ message: 'Coordinator has no assigned phase.' });
+    }
 
     // Check if student exists and has a supervisor
     const student = await StudentProfile.findOne({
@@ -244,24 +249,24 @@ export const getAvailableExaminers = async (req, res) => {
   try {
     const { student_id } = req.query;
 
-    // Get student's current supervisor
-    const student = await StudentProfile.findOne({
-      where: { user_id: student_id }
-    });
+    let excludeSupervisorId = 0;
+    if (student_id) {
+      const student = await StudentProfile.findOne({
+        where: { user_id: student_id }
+      });
+      excludeSupervisorId = student?.current_supervisor_id || 0;
+    }
 
     const availableExaminers = await User.findAll({
       where: {
         role: 'supervisor',
         is_active: true,
-        id: {
-          [Op.ne]: student?.current_supervisor_id || 0
-        }
+        ...(excludeSupervisorId ? { id: { [Op.ne]: excludeSupervisorId } } : {})
       },
       attributes: ['id', 'name', 'email'],
       include: [{
-        model: StudentProfile,
-        as: 'SupervisorProfile',
-        attributes: ['specialization', 'max_students']
+        model: SupervisorProfile,
+        attributes: ['expertise', 'max_students']
       }],
       order: [['name', 'ASC']]
     });

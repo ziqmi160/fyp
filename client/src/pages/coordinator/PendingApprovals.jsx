@@ -1,10 +1,210 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserCheck, UserX, Clock } from 'lucide-react';
+import { UserCheck, UserX, Clock, BookOpen, CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 export default function PendingApprovals() {
+  const [activeTab, setActiveTab] = useState('titles');
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Pending Approvals</h2>
+
+      <div className="flex gap-1 border-b">
+        <TabButton active={activeTab === 'titles'} onClick={() => setActiveTab('titles')}>
+          FYP Title Reviews
+        </TabButton>
+        <TabButton active={activeTab === 'supervisors'} onClick={() => setActiveTab('supervisors')}>
+          Supervisor Registrations
+        </TabButton>
+      </div>
+
+      {activeTab === 'titles' && <TitleReviews />}
+      {activeTab === 'supervisors' && <SupervisorApprovals />}
+    </div>
+  );
+}
+
+function TabButton({ active, onClick, children }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+        active
+          ? 'border-primary text-primary'
+          : 'border-transparent text-gray-500 hover:text-gray-700'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Title Reviews ─────────────────────────────────────────────────────────────
+
+function TitleReviews() {
+  const [expanded, setExpanded] = useState(null);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const qc = useQueryClient();
+
+  const { data: pending = [], isLoading } = useQuery({
+    queryKey: ['pending-titles'],
+    queryFn: async () => {
+      const { data } = await api.get('/coordinator/pending-titles');
+      return data.data || [];
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: (user_id) => api.put(`/coordinator/students/${user_id}/title-review`, { action: 'approve' }),
+    onSuccess: () => {
+      toast.success('Title approved.');
+      qc.invalidateQueries(['pending-titles']);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed'),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ user_id, feedback }) =>
+      api.put(`/coordinator/students/${user_id}/title-review`, { action: 'reject', feedback }),
+    onSuccess: () => {
+      toast.success('Title rejected with feedback.');
+      setRejectTarget(null);
+      qc.invalidateQueries(['pending-titles']);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed'),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (pending.length === 0) {
+    return (
+      <div className="bg-card rounded-xl border p-12 text-center text-gray-500">
+        <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <p className="font-medium">No pending title reviews</p>
+        <p className="text-sm mt-1">All submitted FYP titles have been reviewed.</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="space-y-3">
+        {pending.map((s) => {
+          const isExpanded = expanded === s.user_id;
+          return (
+            <div key={s.user_id} className="bg-card rounded-xl border overflow-hidden">
+              <div className="flex items-center gap-4 p-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">{s.name}</span>
+                    <span className="text-xs text-gray-500">{s.student_id}</span>
+                    {s.class_name && (
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">{s.class_name}</span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-700 mt-0.5 font-medium truncate">{s.fyp_title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Submitted {new Date(s.submitted_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => approveMutation.mutate(s.user_id)}
+                    disabled={approveMutation.isPending}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => setRejectTarget(s)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-medium hover:bg-red-100"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Reject
+                  </button>
+                  <button
+                    onClick={() => setExpanded(isExpanded ? null : s.user_id)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="border-t bg-gray-50 px-4 py-3">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Project Description</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{s.project_description || '—'}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {rejectTarget && (
+        <RejectTitleModal
+          student={rejectTarget}
+          onConfirm={(feedback) => rejectMutation.mutate({ user_id: rejectTarget.user_id, feedback })}
+          onClose={() => setRejectTarget(null)}
+          isPending={rejectMutation.isPending}
+        />
+      )}
+    </>
+  );
+}
+
+function RejectTitleModal({ student, onConfirm, onClose, isPending }) {
+  const [feedback, setFeedback] = useState('');
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <h3 className="text-lg font-semibold mb-1">Reject FYP Title</h3>
+        <p className="text-sm text-gray-600 mb-1">
+          Rejecting <span className="font-medium">{student.name}</span>&apos;s title:
+        </p>
+        <p className="text-sm font-medium text-gray-800 mb-4 italic">&ldquo;{student.fyp_title}&rdquo;</p>
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          placeholder="Explain why you're rejecting this title (required)..."
+          rows={4}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+        />
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={() => onConfirm(feedback)}
+            disabled={isPending || !feedback.trim()}
+            className="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium text-sm hover:bg-red-700 disabled:opacity-50"
+          >
+            {isPending ? 'Rejecting...' : 'Reject Title'}
+          </button>
+          <button
+            onClick={onClose}
+            className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Supervisor Registrations ──────────────────────────────────────────────────
+
+function SupervisorApprovals() {
   const [rejectTarget, setRejectTarget] = useState(null);
   const qc = useQueryClient();
 
@@ -35,93 +235,87 @@ export default function PendingApprovals() {
     onError: (err) => toast.error(err.response?.data?.error || 'Failed to reject'),
   });
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (pending.length === 0) {
+    return (
+      <div className="bg-card rounded-xl border p-12 text-center text-gray-500">
+        <UserCheck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <p className="font-medium">No pending supervisor approvals</p>
+        <p className="text-sm mt-1">All supervisor registrations have been reviewed.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Pending Supervisor Approvals</h2>
-        {pending.length > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">
-            <Clock className="w-4 h-4" />
-            {pending.length} pending
-          </span>
-        )}
+    <>
+      <div className="bg-card rounded-xl border overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="text-left p-4 text-sm font-medium text-gray-600">Name</th>
+              <th className="text-left p-4 text-sm font-medium text-gray-600">Email</th>
+              <th className="text-left p-4 text-sm font-medium text-gray-600">Staff ID</th>
+              <th className="text-left p-4 text-sm font-medium text-gray-600">Registered</th>
+              <th className="text-left p-4 text-sm font-medium text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pending.map((sup) => (
+              <tr key={sup.id} className="border-t hover:bg-gray-50">
+                <td className="p-4 font-medium">{sup.name}</td>
+                <td className="p-4 text-sm text-gray-600">{sup.email}</td>
+                <td className="p-4 text-sm">{sup.staff_id || '-'}</td>
+                <td className="p-4 text-sm text-gray-600">
+                  {new Date(sup.registered_at).toLocaleDateString('en-MY', {
+                    day: 'numeric', month: 'short', year: 'numeric'
+                  })}
+                </td>
+                <td className="p-4">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => approveMutation.mutate(sup.id)}
+                      disabled={approveMutation.isPending}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => setRejectTarget(sup)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-medium hover:bg-red-100"
+                    >
+                      <UserX className="w-4 h-4" />
+                      Reject
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary" />
-        </div>
-      ) : pending.length === 0 ? (
-        <div className="bg-card rounded-xl border p-12 text-center text-gray-500">
-          <UserCheck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-          <p className="font-medium">No pending approvals</p>
-          <p className="text-sm mt-1">All supervisor registrations have been reviewed.</p>
-        </div>
-      ) : (
-        <div className="bg-card rounded-xl border overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Name</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Email</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Staff ID</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Registered</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pending.map((sup) => (
-                <tr key={sup.id} className="border-t hover:bg-gray-50">
-                  <td className="p-4 font-medium">{sup.name}</td>
-                  <td className="p-4 text-sm text-gray-600">{sup.email}</td>
-                  <td className="p-4 text-sm">{sup.staff_id || '-'}</td>
-                  <td className="p-4 text-sm text-gray-600">
-                    {new Date(sup.registered_at).toLocaleDateString('en-MY', {
-                      day: 'numeric', month: 'short', year: 'numeric'
-                    })}
-                  </td>
-                  <td className="p-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => approveMutation.mutate(sup.id)}
-                        disabled={approveMutation.isPending}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50"
-                      >
-                        <UserCheck className="w-4 h-4" />
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => setRejectTarget(sup)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-200 text-sm font-medium hover:bg-red-100"
-                      >
-                        <UserX className="w-4 h-4" />
-                        Reject
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Reject confirmation modal */}
       {rejectTarget && (
-        <RejectModal
+        <RejectSupervisorModal
           supervisor={rejectTarget}
           onConfirm={(reason) => rejectMutation.mutate({ id: rejectTarget.id, reason })}
           onClose={() => setRejectTarget(null)}
           isPending={rejectMutation.isPending}
         />
       )}
-    </div>
+    </>
   );
 }
 
-function RejectModal({ supervisor, onConfirm, onClose, isPending }) {
+function RejectSupervisorModal({ supervisor, onConfirm, onClose, isPending }) {
   const [reason, setReason] = useState('');
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
@@ -144,10 +338,7 @@ function RejectModal({ supervisor, onConfirm, onClose, isPending }) {
           >
             {isPending ? 'Rejecting...' : 'Confirm Reject'}
           </button>
-          <button
-            onClick={onClose}
-            className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="flex-1 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium text-sm hover:bg-gray-50">
             Cancel
           </button>
         </div>

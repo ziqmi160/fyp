@@ -4,7 +4,7 @@ import { createNotification } from './notificationController.js';
 
 export const createSubmission = async (req, res) => {
   try {
-    const { title, submission_type, description, external_link } = req.body;
+    const { title, submission_type, description, external_link, task_id } = req.body;
     const studentId = req.user.id;
 
     const studentProfile = await StudentProfile.findOne({ where: { user_id: studentId } });
@@ -16,9 +16,10 @@ export const createSubmission = async (req, res) => {
       student_id: studentId,
       supervisor_id: studentProfile.current_supervisor_id,
       title,
-      submission_type,
+      submission_type: submission_type || 'progress_report',
       description: description || null,
       external_link: external_link || null,
+      task_id: task_id ? parseInt(task_id) : null,
       submitted_at: new Date()
     });
 

@@ -11,15 +11,16 @@ import {
 
 const router = express.Router();
 
-// All routes require coordinator role
 router.use(verifyToken);
-router.use(requireRole('coordinator'));
 
-router.get('/', getPhases);
-router.post('/', createPhase);
-router.put('/:id', updatePhase);
-router.delete('/:id', deletePhase);
-router.get('/active', getActivePhase);
-router.put('/students/:studentId/advance-phase', advanceStudentPhase);
+// Read-only: coordinators and super_admin can view phases
+router.get('/', requireRole(['coordinator', 'super_admin']), getPhases);
+router.get('/active', requireRole(['coordinator', 'super_admin']), getActivePhase);
+
+// Write ops: super_admin only
+router.post('/', requireRole('super_admin'), createPhase);
+router.put('/:id', requireRole('super_admin'), updatePhase);
+router.delete('/:id', requireRole('super_admin'), deletePhase);
+router.put('/students/:studentId/advance-phase', requireRole('super_admin'), advanceStudentPhase);
 
 export default router;

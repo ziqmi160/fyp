@@ -4,85 +4,60 @@ env.allowLocalModels = false;
 env.useBrowserCache = false;
 
 export const EXPERTISE_CATEGORIES = [
-  'Artificial Intelligence (AI)',
-  'Machine Learning (ML)',
+  'Machine Learning & Deep Learning',
+  'Data Science & Analytics',
+  'Artificial Intelligence',
   'Software Engineering',
-  'Cybersecurity',
-  'Data Science',
-  'Cloud Computing',
-  'Database Management',
-  'Computer Networks',
-  'Web Development',
-  'Mobile App Development',
-  'Human-Computer Interaction (HCI)',
-  'Computer Graphics & Visualization',
-  'Video Game Development',
-  'Embedded Systems',
-  'Theory of Computing & Algorithms',
+  'Natural Language Processing',
+  'Learning Technology & HCI',
+  'Information Systems & Database',
+  'Computer Vision & Image Processing',
+  'Web & Mobile Development',
+  'Cybersecurity & Cryptography',
 ];
 
 // Rich descriptions give the model more semantic surface area than short labels.
 const CATEGORY_DESCRIPTIONS = {
-  'Artificial Intelligence (AI)':
-    'Artificial intelligence systems that simulate human reasoning and problem solving. ' +
-    'Includes expert systems, knowledge representation, planning, natural language processing, ' +
-    'computer vision, autonomous agents, intelligent decision making, and AI ethics.',
-  'Machine Learning (ML)':
-    'Machine learning algorithms that learn patterns from data. Covers supervised learning, ' +
-    'unsupervised learning, deep learning, neural networks, convolutional networks, transformers, ' +
-    'classification, regression, clustering, reinforcement learning, model training, and evaluation.',
+  'Machine Learning & Deep Learning':
+    'Machine learning and deep learning techniques that learn patterns from data. Covers supervised and ' +
+    'unsupervised learning, convolutional neural networks (CNNs), recurrent networks (RNNs), transformers, ' +
+    'reinforcement learning, predictive modelling, class imbalance, and model training and evaluation.',
+  'Data Science & Analytics':
+    'Extracting insights from structured and unstructured data. Includes data mining, big data analytics, ' +
+    'statistical analysis, data visualisation, feature engineering, predictive analytics, healthcare ' +
+    'informatics, social media intelligence, and signal analysis and processing.',
+  'Artificial Intelligence':
+    'Classical and applied AI techniques including fuzzy logic, soft computing, genetic algorithms, ' +
+    'expert systems, computational intelligence, evolutionary computation, scheduling and timetabling, ' +
+    'optimization heuristics, decision support systems, and hierarchical fuzzy systems.',
   'Software Engineering':
-    'Software development processes, methodologies, and best practices. Includes agile development, ' +
-    'DevOps, software architecture, design patterns, testing, code quality, refactoring, ' +
-    'version control, continuous integration, and software project management.',
-  'Cybersecurity':
-    'Protecting systems, networks, and data from digital attacks and unauthorised access. ' +
-    'Covers cryptography, network security, penetration testing, vulnerability assessment, ' +
-    'authentication, access control, malware analysis, secure coding, and incident response.',
-  'Data Science':
-    'Extracting insights and knowledge from structured and unstructured data. Includes statistical ' +
-    'analysis, data wrangling, feature engineering, exploratory data analysis, data visualisation, ' +
-    'predictive modelling, and working with large-scale datasets and pipelines.',
-  'Cloud Computing':
-    'Delivering computing services over the internet using cloud platforms such as AWS, Azure, and GCP. ' +
-    'Covers serverless computing, containerisation with Docker and Kubernetes, microservices, ' +
-    'infrastructure as code, scalable distributed systems, and cloud-native application design.',
-  'Database Management':
-    'Designing, implementing, and managing databases for efficient data storage and retrieval. ' +
-    'Includes relational databases with SQL, NoSQL databases, query optimisation, data modelling, ' +
-    'indexing, transactions, replication, and database administration.',
-  'Computer Networks':
-    'Designing and managing communication networks and protocols. Covers TCP/IP, routing and switching, ' +
-    'wireless networks, 5G, software-defined networking, IoT connectivity, network monitoring, ' +
-    'performance optimisation, and network architecture.',
-  'Web Development':
-    'Building web applications and websites for the browser. Includes frontend development with HTML, ' +
-    'CSS, and JavaScript frameworks, backend development with REST and GraphQL APIs, responsive design, ' +
-    'progressive web apps, web performance, and deployment.',
-  'Mobile App Development':
-    'Creating applications for smartphones and tablets. Covers native iOS and Android development, ' +
-    'cross-platform frameworks such as Flutter and React Native, mobile UI and UX design, ' +
-    'offline functionality, push notifications, and app store deployment.',
-  'Human-Computer Interaction (HCI)':
-    'Designing usable, accessible, and engaging interfaces between humans and computers. ' +
-    'Includes user experience design, usability testing, accessibility standards, interaction design, ' +
-    'user research methods, interface prototyping, and cognitive ergonomics.',
-  'Computer Graphics & Visualization':
-    'Creating and manipulating visual content using computational techniques. Covers 3D modelling, ' +
-    'real-time rendering, physically based rendering, animation, image processing, scientific ' +
-    'visualisation, augmented reality, virtual reality, and shader programming.',
-  'Video Game Development':
-    'Designing and building interactive video games across platforms. Includes game engine architecture ' +
-    'using Unity or Unreal, game mechanics, level design, game AI and pathfinding, physics simulation, ' +
-    'procedural generation, multiplayer networking, and game optimisation.',
-  'Embedded Systems':
-    'Developing software for dedicated and resource-constrained hardware systems. Covers ' +
-    'microcontrollers, real-time operating systems, firmware development, IoT devices, sensor ' +
-    'integration, hardware-software co-design, FPGA programming, and edge computing.',
-  'Theory of Computing & Algorithms':
-    'Mathematical foundations of computation and systematic algorithm design. Includes computational ' +
-    'complexity theory, data structures, algorithm analysis, formal languages, automata theory, ' +
-    'graph algorithms, dynamic programming, and provably correct problem solving.',
+    'Software development processes, quality assurance, and project management. Covers requirements ' +
+    'engineering, software metrics, functional size measurement, effort estimation, software architecture, ' +
+    'testing, agile methodologies, ontology engineering, and software project management.',
+  'Natural Language Processing':
+    'Processing and understanding human language through computational methods. Includes NLP, text ' +
+    'analytics, sentiment analysis, speech processing and recognition, Malay and multilingual language ' +
+    'technology, information retrieval, and human language technology.',
+  'Learning Technology & HCI':
+    'Technology-enhanced learning and human-computer interaction. Covers e-learning platforms, ' +
+    'gamification, educational technology, multimedia systems, learning analytics, edutainment, ' +
+    'intelligent learning systems, collaborative computing, and user experience design.',
+  'Information Systems & Database':
+    'Design and management of information systems and databases. Includes relational and NoSQL databases, ' +
+    'information retrieval, knowledge management, ontology engineering, digital libraries, electronic ' +
+    'information storage, and collaborative information systems.',
+  'Computer Vision & Image Processing':
+    'Processing and understanding visual data through computation. Covers digital image processing, ' +
+    'computer vision, object detection, image segmentation, pattern recognition, signal processing, ' +
+    'image retrieval, and visual data analysis for medical or industrial applications.',
+  'Web & Mobile Development':
+    'Building web and mobile applications. Includes frontend and backend web development, cloud computing, ' +
+    'mobile computing, cross-platform frameworks, REST API design, progressive web apps, games ' +
+    'development, and scalable distributed application architecture.',
+  'Cybersecurity & Cryptography':
+    'Protecting systems and data from digital threats. Covers cryptographic algorithms, blockchain ' +
+    'technology, network security, intrusion detection, penetration testing, secure communication ' +
+    'protocols, digital forensics, and cybersecurity frameworks.',
 };
 
 let _pipeline = null;

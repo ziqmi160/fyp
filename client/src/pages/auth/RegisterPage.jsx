@@ -7,6 +7,19 @@ import toast from 'react-hot-toast';
 import { CheckCircle } from 'lucide-react';
 import api from '../../services/api';
 
+const EXPERTISE_CATEGORIES = [
+  'Machine Learning & Deep Learning',
+  'Data Science & Analytics',
+  'Artificial Intelligence',
+  'Software Engineering',
+  'Natural Language Processing',
+  'Learning Technology & HCI',
+  'Information Systems & Database',
+  'Computer Vision & Image Processing',
+  'Web & Mobile Development',
+  'Cybersecurity & Cryptography',
+];
+
 // Student self-registration is disabled; students are registered by the coordinator via CSV import.
 // const studentSchema = z.object({
 //   role: z.literal('student'),
@@ -30,15 +43,22 @@ const schema = supervisorSchema;
 export default function RegisterPage() {
   const navigate = useNavigate();
   const [submitted, setSubmitted] = useState(false);
+  const [selectedExpertise, setSelectedExpertise] = useState([]);
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { role: 'supervisor' },
   });
 
+  const toggleExpertise = (cat) => {
+    setSelectedExpertise(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    );
+  };
+
   const onSubmit = async (data) => {
     try {
-      await api.post('/auth/register', { ...data, role: 'supervisor' });
+      await api.post('/auth/register', { ...data, role: 'supervisor', expertise: selectedExpertise });
       setSubmitted(true);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Registration failed');
@@ -68,7 +88,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         <div className="bg-card rounded-2xl shadow-xl p-8 border border-gray-100">
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary text-white text-2xl font-bold mb-4">
@@ -123,6 +143,30 @@ export default function RegisterPage() {
                 placeholder="e.g. S001"
               />
               {errors.staff_id && <p className="text-red-500 text-sm mt-1">{errors.staff_id.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Areas of Expertise
+                <span className="ml-2 text-xs font-normal text-gray-400">({selectedExpertise.length} selected)</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {EXPERTISE_CATEGORIES.map(cat => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => toggleExpertise(cat)}
+                    className={`px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
+                      selectedExpertise.includes(cat)
+                        ? 'bg-primary text-white border-primary'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-primary hover:text-primary'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Select all that apply. You can update this later in Settings.</p>
             </div>
 
             <p className="text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">

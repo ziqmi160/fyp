@@ -75,3 +75,54 @@ export const updateProjectDescription = async (req, res) => {
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };
+
+export const submitFypProposal = async (req, res) => {
+  try {
+    const { fyp_title, project_description } = req.body;
+
+    if (!fyp_title?.trim()) {
+      return res.status(400).json({ success: false, error: 'FYP title is required.' });
+    }
+    if (!project_description?.trim()) {
+      return res.status(400).json({ success: false, error: 'Project description is required.' });
+    }
+
+    const profile = await StudentProfile.findOne({ where: { user_id: req.user.id } });
+    if (!profile) {
+      return res.status(404).json({ success: false, error: 'Student profile not found.' });
+    }
+
+    if (profile.title_status === 'approved') {
+      return res.status(400).json({ success: false, error: 'Your title has already been approved and cannot be changed.' });
+    }
+
+    await profile.update({
+      fyp_title: fyp_title.trim(),
+      project_description: project_description.trim(),
+      title_status: 'pending',
+      title_feedback: null
+    });
+
+    res.json({ success: true, data: profile, message: 'FYP proposal submitted for review.' });
+  } catch (error) {
+    console.error('Submit FYP proposal error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+export const withdrawFypProposal = async (req, res) => {
+  try {
+    const profile = await StudentProfile.findOne({ where: { user_id: req.user.id } });
+    if (!profile) return res.status(404).json({ success: false, error: 'Student profile not found.' });
+
+    if (profile.title_status !== 'pending') {
+      return res.status(400).json({ success: false, error: 'Only pending proposals can be withdrawn.' });
+    }
+
+    await profile.update({ title_status: 'not_submitted' });
+    res.json({ success: true, message: 'Proposal withdrawn.' });
+  } catch (error) {
+    console.error('Withdraw proposal error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { UserPlus, UserX, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, UserX, RotateCcw, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -11,10 +11,12 @@ const schema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  coordinator_phase: z.enum(['CSP600', 'CSP650'], { required_error: 'Phase is required' }),
 });
 
 export default function ManageCoordinators() {
   const [showForm, setShowForm] = useState(false);
+  const [editingPhase, setEditingPhase] = useState(null);
   const qc = useQueryClient();
 
   const { data: coordinators = [], isLoading } = useQuery({
@@ -54,6 +56,16 @@ export default function ManageCoordinators() {
     onError: (err) => toast.error(err.response?.data?.error || 'Failed to reactivate'),
   });
 
+  const updatePhaseMutation = useMutation({
+    mutationFn: ({ id, coordinator_phase }) => api.put(`/admin/coordinators/${id}/phase`, { coordinator_phase }),
+    onSuccess: () => {
+      toast.success('Phase updated.');
+      setEditingPhase(null);
+      qc.invalidateQueries(['admin-coordinators']);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to update phase'),
+  });
+
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
   });
@@ -75,7 +87,7 @@ export default function ManageCoordinators() {
       {showForm && (
         <div className="bg-card rounded-xl border p-6">
           <h3 className="font-medium mb-4">New Coordinator Account</h3>
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
               <input
@@ -105,7 +117,19 @@ export default function ManageCoordinators() {
               />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
-            <div className="md:col-span-3 flex gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Phase</label>
+              <select
+                {...register('coordinator_phase')}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+              >
+                <option value="">Select phase...</option>
+                <option value="CSP600">CSP600</option>
+                <option value="CSP650">CSP650</option>
+              </select>
+              {errors.coordinator_phase && <p className="text-red-500 text-xs mt-1">{errors.coordinator_phase.message}</p>}
+            </div>
+            <div className="md:col-span-4 flex gap-3">
               <button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending}
@@ -140,6 +164,7 @@ export default function ManageCoordinators() {
               <tr>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Name</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Email</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-600">Phase</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Status</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Actions</th>
               </tr>
@@ -149,6 +174,37 @@ export default function ManageCoordinators() {
                 <tr key={c.id} className="border-t hover:bg-gray-50">
                   <td className="p-4 font-medium">{c.name}</td>
                   <td className="p-4 text-sm text-gray-600">{c.email}</td>
+                  <td className="p-4">
+                    {editingPhase?.id === c.id ? (
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={editingPhase.phase}
+                          onChange={(e) => setEditingPhase({ ...editingPhase, phase: e.target.value })}
+                          className="px-2 py-1 text-xs border rounded-lg focus:ring-1 focus:ring-primary"
+                        >
+                          <option value="CSP600">CSP600</option>
+                          <option value="CSP650">CSP650</option>
+                        </select>
+                        <button
+                          onClick={() => updatePhaseMutation.mutate({ id: c.id, coordinator_phase: editingPhase.phase })}
+                          disabled={updatePhaseMutation.isPending}
+                          className="px-2 py-1 text-xs bg-primary text-white rounded-lg hover:bg-primary/90 disabled:opacity-50"
+                        >Save</button>
+                        <button onClick={() => setEditingPhase(null)} className="px-2 py-1 text-xs border rounded-lg hover:bg-gray-50">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          c.coordinator_phase === 'CSP600' ? 'bg-blue-100 text-blue-700' : c.coordinator_phase === 'CSP650' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {c.coordinator_phase || 'Unassigned'}
+                        </span>
+                        <button onClick={() => setEditingPhase({ id: c.id, phase: c.coordinator_phase || 'CSP600' })} className="text-gray-400 hover:text-gray-600">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
                   <td className="p-4">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       c.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'

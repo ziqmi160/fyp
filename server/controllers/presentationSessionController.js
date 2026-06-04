@@ -3,10 +3,11 @@ import { Op } from 'sequelize';
 
 export const getPresentationSessions = async (req, res) => {
   try {
-    const { phase, session_type, status } = req.query;
+    const { session_type, status } = req.query;
     const whereClause = {};
-    
-    if (phase) whereClause.phase = phase;
+
+    if (req.user?.coordinator_phase) whereClause.phase = req.user.coordinator_phase;
+    // If coordinator has no assigned phase, return all sessions (don't filter on null)
     if (session_type) whereClause.session_type = session_type;
     if (status) whereClause.status = status;
 
@@ -43,16 +44,21 @@ export const getPresentationSessions = async (req, res) => {
       order: [['date', 'ASC'], ['start_time', 'ASC']]
     });
 
-    res.json(sessions);
+    res.json({ success: true, data: sessions });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching presentation sessions', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
 export const createPresentationSession = async (req, res) => {
   try {
-    const { title, session_type, phase, date, start_time, end_time, venue, description } = req.body;
+    const { title, session_type, date, start_time, end_time, venue, description } = req.body;
     const created_by = req.user.id;
+    const phase = req.user.coordinator_phase;
+
+    if (!phase) {
+      return res.status(400).json({ message: 'Coordinator has no assigned phase.' });
+    }
 
     const session = await PresentationSession.create({
       title,
@@ -76,9 +82,9 @@ export const createPresentationSession = async (req, res) => {
       ]
     });
 
-    res.status(201).json(createdSession);
+    res.status(201).json({ success: true, data: createdSession });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating presentation session', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -130,9 +136,9 @@ export const updatePresentationSession = async (req, res) => {
       ]
     });
 
-    res.json(updatedSession);
+    res.json({ success: true, data: updatedSession });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating presentation session', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -157,9 +163,9 @@ export const deletePresentationSession = async (req, res) => {
     }
 
     await session.destroy();
-    res.json({ message: 'Presentation session deleted successfully' });
+    res.json({ success: true, message: 'Presentation session deleted.' });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting presentation session', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -239,9 +245,9 @@ export const createPresentationSlot = async (req, res) => {
       ]
     });
 
-    res.status(201).json(createdSlot);
+    res.status(201).json({ success: true, data: createdSlot });
   } catch (error) {
-    res.status(500).json({ message: 'Error creating presentation slot', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -284,9 +290,9 @@ export const updatePresentationSlot = async (req, res) => {
       ]
     });
 
-    res.json(updatedSlot);
+    res.json({ success: true, data: updatedSlot });
   } catch (error) {
-    res.status(500).json({ message: 'Error updating presentation slot', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -300,9 +306,9 @@ export const deletePresentationSlot = async (req, res) => {
     }
 
     await slot.destroy();
-    res.json({ message: 'Presentation slot deleted successfully' });
+    res.json({ success: true, message: 'Presentation slot deleted.' });
   } catch (error) {
-    res.status(500).json({ message: 'Error deleting presentation slot', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -351,9 +357,9 @@ export const getMyPresentationSlots = async (req, res) => {
       order: [['created_at', 'DESC']]
     });
 
-    res.json(slots);
+    res.json({ success: true, data: slots });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching presentation slots', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -373,8 +379,8 @@ export const confirmPresentationSlot = async (req, res) => {
 
     await slot.update({ student_confirmed: true });
 
-    res.json({ message: 'Presentation slot confirmed successfully' });
+    res.json({ success: true, message: 'Presentation slot confirmed.' });
   } catch (error) {
-    res.status(500).json({ message: 'Error confirming presentation slot', error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
