@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save } from 'lucide-react';
+import { Save, PenLine, CheckCircle2 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
+import SignaturePad from '../../components/common/SignaturePad';
 
 const EXPERTISE_CATEGORIES = [
   'Machine Learning & Deep Learning',
@@ -21,6 +22,7 @@ export default function SupervisorSettings() {
   const qc = useQueryClient();
   const [selectedExpertise, setSelectedExpertise] = useState([]);
   const [expertiseDirty, setExpertiseDirty] = useState(false);
+  const [pendingSig, setPendingSig] = useState(null);  // base64 from pad, not yet saved
 
   const { data: profile } = useQuery({
     queryKey: ['user-profile'],
@@ -51,6 +53,24 @@ export default function SupervisorSettings() {
       toast.success('Quota updated');
       qc.invalidateQueries(['user-profile']);
     },
+  });
+
+  const { data: sigData } = useQuery({
+    queryKey: ['my-signature'],
+    queryFn: async () => {
+      const { data } = await api.get('/users/signature');
+      return data.data?.signature || null;
+    },
+  });
+
+  const signatureMutation = useMutation({
+    mutationFn: (signature) => api.put('/users/signature', { signature }),
+    onSuccess: () => {
+      toast.success('Signature saved.');
+      setPendingSig(null);
+      qc.invalidateQueries(['my-signature']);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to save signature'),
   });
 
   const expertiseMutation = useMutation({
@@ -149,6 +169,45 @@ export default function SupervisorSettings() {
         )}
         {selectedExpertise.length > 0 && !expertiseDirty && (
           <p className="text-xs text-gray-400 mt-3">{selectedExpertise.length} area{selectedExpertise.length !== 1 ? 's' : ''} selected. Click any to change, then save.</p>
+        )}
+      </div>
+
+      {/* Signature */}
+      <div className="bg-card rounded-xl p-6 border space-y-4">
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="font-medium flex items-center gap-2">
+              <PenLine className="w-4 h-4 text-primary" />
+              My Signature
+            </h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Saved once and used to sign F5 meeting records. Draw using mouse or touch.
+            </p>
+          </div>
+          {sigData && !pendingSig && (
+            <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Signature saved
+            </span>
+          )}
+        </div>
+
+        <SignaturePad
+          key={sigData || 'empty'}
+          initialValue={pendingSig ?? sigData ?? null}
+          onChange={setPendingSig}
+          width={420}
+          height={160}
+        />
+
+        {pendingSig && (
+          <button
+            onClick={() => signatureMutation.mutate(pendingSig)}
+            disabled={signatureMutation.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            {signatureMutation.isPending ? 'Saving...' : 'Save Signature'}
+          </button>
         )}
       </div>
     </div>

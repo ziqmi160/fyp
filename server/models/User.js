@@ -38,6 +38,16 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('CSP600', 'CSP650'),
     allowNull: true,
     defaultValue: null
+  },
+  signature: {
+    type: DataTypes.TEXT('medium'),
+    allowNull: true,
+    defaultValue: null
+  },
+  is_multi_role: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'users',

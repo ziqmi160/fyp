@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { getStats, getStudents, getSupervisors, updateSupervisorQuota, generateReport, updateStudentPhaseAndExaminer, createPresentationSchedule, getPresentationSchedules, getPendingSupervisors, updateSupervisorApproval, importStudents, getClasses, createClass, updateClass, deleteClass, assignStudentToClass, getPendingTitles, reviewTitle } from '../controllers/coordinatorController.js';
+import { getStats, getStudents, getSupervisors, updateSupervisorQuota, generateReport, updateStudentPhaseAndExaminer, createPresentationSchedule, getPresentationSchedules, getPendingSupervisors, updateSupervisorApproval, importStudents, getClasses, createClass, updateClass, deleteClass, assignStudentToClass, getStudentDocumentsHub, downloadStudentDocumentsBulk } from '../controllers/coordinatorController.js';
 import { verifyToken } from '../middleware/auth.js';
 import { coordinatorOnly } from '../middleware/rbac.js';
 
@@ -26,8 +26,8 @@ router.post('/classes', createClass);
 router.put('/classes/:id', updateClass);
 router.delete('/classes/:id', deleteClass);
 router.post('/classes/assign-student', assignStudentToClass);
+router.get('/student-documents', getStudentDocumentsHub);
+router.post('/student-documents/bulk-download', downloadStudentDocumentsBulk);
 
-router.get('/pending-titles', getPendingTitles);
-router.put('/students/:id/title-review', reviewTitle);
 
 export default router;

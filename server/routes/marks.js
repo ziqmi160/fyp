@@ -3,6 +3,7 @@ import { verifyToken, requireRole } from '../middleware/auth.js';
 import {
   getStudentMarks,
   getConsolidatedMarks,
+  getCoordinatorMarks,
   exportMarksReport,
   getMarksStatistics
 } from '../controllers/marksController.js';
@@ -13,6 +14,9 @@ router.use(verifyToken);
 
 // Get student marks (filtered by user role)
 router.get('/', getStudentMarks);
+
+// Coordinator consolidated marks (scoped to their own classes)
+router.get('/coordinator', requireRole('coordinator'), getCoordinatorMarks);
 
 // Get consolidated marks for reporting
 router.get('/consolidated', getConsolidatedMarks);

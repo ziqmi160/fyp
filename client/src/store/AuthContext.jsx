@@ -30,6 +30,12 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const switchRole = async (role) => {
+    const { data } = await api.post('/auth/switch-role', { role });
+    setUser(data.data.user);
+    return data.data.user;
+  };
+
   const roleRoute = {
     student: '/student/dashboard',
     supervisor: '/supervisor/dashboard',
@@ -38,7 +44,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, roleRoute }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, switchRole, roleRoute }}>
       {children}
     </AuthContext.Provider>
   );

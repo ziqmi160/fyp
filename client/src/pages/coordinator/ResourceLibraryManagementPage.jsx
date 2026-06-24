@@ -8,6 +8,15 @@ export default function ResourceLibraryManagementPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+
+  const filteredResources = resources.filter((r) => {
+    if (typeFilter && r.type !== typeFilter) return false;
+    if (!search) return true;
+    const haystack = `${r.title} ${r.specialization || ''}`.toLowerCase();
+    return haystack.includes(search.toLowerCase());
+  });
 
   useEffect(() => {
     fetchResources();
@@ -136,8 +145,30 @@ export default function ResourceLibraryManagementPage() {
         </div>
       </form>
 
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by title or specialization..."
+          className="flex-1 px-4 py-2 border rounded"
+        />
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="px-4 py-2 border rounded"
+        >
+          <option value="">All types</option>
+          <option value="title">FYP Title</option>
+          <option value="specialization">Specialization</option>
+        </select>
+      </div>
+
       <div className="grid grid-cols-1 gap-4">
-        {resources.map(resource => (
+        {filteredResources.length === 0 && (
+          <p className="text-center text-sm text-gray-500 py-8">No resources match your search.</p>
+        )}
+        {filteredResources.map(resource => (
           <div key={resource.id} className="border rounded-lg p-4 flex justify-between items-start">
             <div className="flex-1">
               <h3 className="font-bold text-lg">{resource.title}</h3>

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './store/AuthContext';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import TestingRegisterPage from './pages/auth/TestingRegisterPage';
 import StudentLayout from './components/layout/StudentLayout';
 import SupervisorLayout from './components/layout/SupervisorLayout';
 import CoordinatorLayout from './components/layout/CoordinatorLayout';
@@ -11,8 +12,8 @@ import SupervisorMarketplace from './pages/student/SupervisorMarketplace';
 import MySupervisor from './pages/student/MySupervisor';
 import StudentSubmissions from './pages/student/StudentSubmissions';
 import StudentMeetings from './pages/student/StudentMeetings';
-import FormSubmissions from './pages/student/FormSubmissions';
-import StudentPresentations from './pages/student/StudentPresentations';
+// import FormSubmissions from './pages/student/FormSubmissions'; // replaced by tasks page
+// import StudentPresentations from './pages/student/StudentPresentations'; // not needed
 import SupervisorDashboard from './pages/supervisor/SupervisorDashboard';
 import SupervisionRequests from './pages/supervisor/SupervisionRequests';
 import MyStudents from './pages/supervisor/MyStudents';
@@ -27,11 +28,11 @@ import CoordinatorStudents from './pages/coordinator/CoordinatorStudents';
 import CoordinatorSupervisors from './pages/coordinator/CoordinatorSupervisors';
 import CoordinatorReports from './pages/coordinator/CoordinatorReports';
 import CoordinatorSchedules from './pages/coordinator/CoordinatorSchedules';
-import ExaminerAssignment from './pages/coordinator/ExaminerAssignment';
-import PresentationSessions from './pages/coordinator/PresentationSessions';
+// import ExaminerAssignment from './pages/coordinator/ExaminerAssignment'; // handled inline in Students page
+// import PresentationSessions from './pages/coordinator/PresentationSessions'; // not needed
 import EvaluationForms from './pages/supervisor/EvaluationForms';
-import AmendmentManagement from './pages/supervisor/AmendmentManagement';
-import SupervisorPresentations from './pages/supervisor/SupervisorPresentations';
+// import AmendmentManagement from './pages/supervisor/AmendmentManagement'; // not needed
+// import SupervisorPresentations from './pages/supervisor/SupervisorPresentations'; // not needed
 import ResourceLibraryPage from './pages/student/ResourceLibraryPage';
 import PlagiarismCheckPage from './pages/student/PlagiarismCheckPage';
 import EthicalApprovalPage from './pages/student/EthicalApprovalPage';
@@ -43,6 +44,10 @@ import EthicalApprovalManagementPage from './pages/coordinator/EthicalApprovalMa
 import DeliverablesStatusPage from './pages/coordinator/DeliverablesStatusPage';
 import ExhibitionManagementPage from './pages/coordinator/ExhibitionManagementPage';
 import PendingApprovals from './pages/coordinator/PendingApprovals';
+import RubricTemplates from './pages/coordinator/RubricTemplates';
+import CoordinatorEvaluationForms from './pages/coordinator/CoordinatorEvaluationForms';
+import StudentDocuments from './pages/coordinator/StudentDocuments';
+import CoordinatorMarks from './pages/coordinator/CoordinatorMarks';
 import ManageCoordinators from './pages/admin/ManageCoordinators';
 
 function ProtectedRoute({ children, allowedRoles }) {
@@ -68,6 +73,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to={roleRoute[user.role]} replace /> : <LoginPage />} />
       <Route path="/register" element={user ? <Navigate to={roleRoute[user.role]} replace /> : <RegisterPage />} />
+      <Route path="/register-testing" element={user ? <Navigate to={roleRoute[user.role]} replace /> : <TestingRegisterPage />} />
       <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<StudentDashboard />} />
@@ -76,8 +82,8 @@ export default function App() {
         <Route path="supervisor" element={<MySupervisor />} />
         <Route path="submissions" element={<StudentSubmissions />} />
         <Route path="meetings" element={<StudentMeetings />} />
-        <Route path="forms" element={<FormSubmissions />} />
-        <Route path="presentations" element={<StudentPresentations />} />
+        {/* <Route path="forms" element={<FormSubmissions />} /> */}
+        {/* <Route path="presentations" element={<StudentPresentations />} /> */}
         <Route path="resources" element={<ResourceLibraryPage />} />
         <Route path="plagiarism-check" element={<PlagiarismCheckPage />} />
         <Route path="ethical-approval" element={<EthicalApprovalPage />} />
@@ -92,8 +98,8 @@ export default function App() {
         <Route path="submissions" element={<SupervisorSubmissions />} />
         <Route path="meetings" element={<SupervisorMeetings />} />
         <Route path="evaluation-forms" element={<EvaluationForms />} />
-        <Route path="amendments" element={<AmendmentManagement />} />
-        <Route path="presentations" element={<SupervisorPresentations />} />
+        {/* <Route path="amendments" element={<AmendmentManagement />} /> */}
+        {/* <Route path="presentations" element={<SupervisorPresentations />} /> */}
         <Route path="settings" element={<SupervisorSettings />} />
       </Route>
       <Route path="/coordinator" element={<ProtectedRoute allowedRoles={['coordinator']}><CoordinatorLayout /></ProtectedRoute>}>
@@ -105,14 +111,18 @@ export default function App() {
         <Route path="supervisors" element={<CoordinatorSupervisors />} />
         <Route path="schedules" element={<CoordinatorSchedules />} />
         <Route path="reports" element={<CoordinatorReports />} />
-        <Route path="examiner-assignments" element={<ExaminerAssignment />} />
-        <Route path="presentation-sessions" element={<PresentationSessions />} />
+        {/* <Route path="examiner-assignments" element={<ExaminerAssignment />} /> */}
+        {/* <Route path="presentation-sessions" element={<PresentationSessions />} /> */}
         <Route path="resource-library" element={<ResourceLibraryManagementPage />} />
         <Route path="plagiarism-checks" element={<PlagiarismCheckReviewPage />} />
         <Route path="ethical-approval" element={<EthicalApprovalManagementPage />} />
         <Route path="deliverables" element={<DeliverablesStatusPage />} />
         <Route path="exhibition" element={<ExhibitionManagementPage />} />
         <Route path="approvals" element={<PendingApprovals />} />
+        <Route path="rubric-templates" element={<RubricTemplates />} />
+        <Route path="evaluation-forms" element={<CoordinatorEvaluationForms />} />
+        <Route path="marks" element={<CoordinatorMarks />} />
+        <Route path="student-documents" element={<StudentDocuments />} />
       </Route>
       <Route path="/admin" element={<ProtectedRoute allowedRoles={['super_admin']}><SuperAdminLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="coordinators" replace />} />

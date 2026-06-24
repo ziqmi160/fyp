@@ -3,10 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import QuotaBar from '../../components/common/QuotaBar';
+import { Search } from 'lucide-react';
 
 export default function CoordinatorSupervisors() {
   const [editingQuota, setEditingQuota] = useState(null);
   const [quotaVal, setQuotaVal] = useState('');
+  const [search, setSearch] = useState('');
+  const [availability, setAvailability] = useState('');
   const qc = useQueryClient();
 
   const { data: supervisors = [] } = useQuery({
@@ -15,6 +18,15 @@ export default function CoordinatorSupervisors() {
       const { data } = await api.get('/coordinator/supervisors');
       return data.data || [];
     },
+  });
+
+  const filtered = supervisors.filter((sup) => {
+    if (availability === 'accepting' && !sup.is_accepting) return false;
+    if (availability === 'not_accepting' && sup.is_accepting) return false;
+    if (!search) return true;
+    const expertiseText = Array.isArray(sup.expertise) ? sup.expertise.join(' ') : (sup.expertise || '');
+    return (sup.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      expertiseText.toLowerCase().includes(search.toLowerCase());
   });
 
   const updateQuota = useMutation({
@@ -35,7 +47,30 @@ export default function CoordinatorSupervisors() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Supervisor Management</h2>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <h2 className="text-xl font-semibold">Supervisor Management</h2>
+        <div className="flex flex-wrap gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name or expertise..."
+              className="pl-9 pr-4 py-2 rounded-lg border text-sm"
+            />
+          </div>
+          <select
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            className="px-4 py-2 rounded-lg border text-sm"
+          >
+            <option value="">All availability</option>
+            <option value="accepting">Accepting</option>
+            <option value="not_accepting">Not accepting</option>
+          </select>
+        </div>
+      </div>
+
       <div className="bg-card rounded-xl border overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -48,7 +83,7 @@ export default function CoordinatorSupervisors() {
             </tr>
           </thead>
           <tbody>
-            {supervisors.map((sup) => (
+            {filtered.map((sup) => (
               <tr key={sup.id} className="border-t">
                 <td className="p-4 font-medium">{sup.name}</td>
                 <td className="p-4 text-sm">
@@ -86,6 +121,9 @@ export default function CoordinatorSupervisors() {
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <p className="text-center text-sm text-gray-500 py-8">No supervisors match your search.</p>
+        )}
       </div>
     </div>
   );

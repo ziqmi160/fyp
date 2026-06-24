@@ -7,20 +7,27 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import QuotaBar from '../../components/common/QuotaBar';
 import EmptyState from '../../components/common/EmptyState';
-import { Search, UserPlus, Sparkles, FileText, X } from 'lucide-react';
+import { Search, UserPlus, Sparkles, FileText, X, FlaskConical } from 'lucide-react';
+import { useAuth } from '../../store/AuthContext';
 
 const requestSchema = z.object({
   title_proposed: z.string().min(1, 'Title required'),
   message: z.string().optional(),
 });
 
+// Recommendations below this score are too weak to surface (irrelevant expertise).
+// Calibrated to the hybrid score range: strong topical matches land ~0.40+,
+// decent matches ~0.30, off-topic supervisors fall below 0.20.
+const MIN_RECOMMENDATION_SCORE = 0.20;
+
 function matchLabel(score) {
-  if (score >= 0.6) return { label: 'Best Match', color: 'bg-green-100 text-green-700' };
-  if (score >= 0.45) return { label: 'Strong Match', color: 'bg-blue-100 text-blue-700' };
+  if (score >= 0.40) return { label: 'Best Match', color: 'bg-green-100 text-green-700' };
+  if (score >= 0.30) return { label: 'Strong Match', color: 'bg-blue-100 text-blue-700' };
   return { label: 'Good Match', color: 'bg-amber-100 text-amber-700' };
 }
 
 export default function SupervisorMarketplace() {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [availableOnly, setAvailableOnly] = useState(true);
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
@@ -83,15 +90,20 @@ export default function SupervisorMarketplace() {
       expertiseText.toLowerCase().includes(search.toLowerCase());
   });
 
+  const topRecommendations = recommendations.filter(r => r.match_score >= MIN_RECOMMENDATION_SCORE);
+
   const hasPending = myRequests.some(r => r.status === 'pending');
   const hasSupervisor = myRequests.some(r => r.status === 'accepted');
 
   const canRequest = (sup) => {
     if (hasSupervisor || hasPending) return false;
     if (!sup.is_accepting || sup.current_student_count >= sup.max_students) return false;
+    if (user?.is_multi_role && (sup.user_id || sup.id) !== user.id) return false;
     const existing = myRequests.find(r => r.supervisor_id === (sup.user_id || sup.id));
     return !existing;
   };
+
+  const isTestingRestricted = (sup) => user?.is_multi_role && (sup.user_id || sup.id) !== user.id;
 
   const openRequest = (sup) => {
     setSelectedSupervisor(sup);
@@ -109,9 +121,10 @@ export default function SupervisorMarketplace() {
       {/* NLP Recommendations */}
       {projectDescription && (
         <RecommendedSupervisors
-          recommendations={recommendations}
+          recommendations={topRecommendations}
           isLoading={recLoading}
           canRequest={canRequest}
+          isTestingRestricted={isTestingRestricted}
           onRequest={openRequest}
         />
       )}
@@ -144,6 +157,7 @@ export default function SupervisorMarketplace() {
               key={sup.id}
               supervisor={sup}
               canRequest={canRequest(sup)}
+              isTestingRestricted={isTestingRestricted(sup)}
               onRequest={() => openRequest(sup)}
             />
           ))}
@@ -205,7 +219,7 @@ function ProjectDescriptionPrompt({ description, onEdit }) {
   );
 }
 
-function RecommendedSupervisors({ recommendations, isLoading, canRequest, onRequest }) {
+function RecommendedSupervisors({ recommendations, isLoading, canRequest, isTestingRestricted, onRequest }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
@@ -213,15 +227,15 @@ function RecommendedSupervisors({ recommendations, isLoading, canRequest, onRequ
         <h3 className="font-semibold text-secondary">Recommended for You</h3>
       </div>
       {isLoading ? (
-        <div className="flex gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
           {[1, 2, 3].map(i => (
-            <div key={i} className="flex-1 h-36 bg-gray-100 rounded-xl animate-pulse" />
+            <div key={i} className="h-36 bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       ) : recommendations.length === 0 ? (
-        <p className="text-sm text-gray-500">No recommendations available yet. Make sure supervisors have set their expertise.</p>
+        <p className="text-sm text-gray-500">No strong matches found yet. Try refining your project description, or browse all supervisors below.</p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {recommendations.map((sup) => {
             const { label, color } = matchLabel(sup.match_score);
             return (
@@ -232,9 +246,21 @@ function RecommendedSupervisors({ recommendations, isLoading, canRequest, onRequ
                 <h4 className="font-semibold text-secondary pr-20">{sup.name}</h4>
                 <p className="text-xs text-gray-500 mt-0.5">{sup.staff_id}</p>
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {(Array.isArray(sup.expertise) ? sup.expertise : []).map((e, i) => (
-                    <span key={i} className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">{e}</span>
-                  ))}
+                  {(Array.isArray(sup.expertise) ? sup.expertise : []).map((e, i) => {
+                    const isMatched = Array.isArray(sup.matched_tags) && sup.matched_tags.includes(e);
+                    return (
+                      <span
+                        key={i}
+                        className={`text-xs px-2 py-0.5 rounded ${
+                          isMatched
+                            ? 'bg-green-100 text-green-700 font-medium ring-1 ring-green-300'
+                            : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {e}
+                      </span>
+                    );
+                  })}
                 </div>
                 <div className="mt-3">
                   <QuotaBar current={sup.current_student_count} max={sup.max_students} />
@@ -242,11 +268,18 @@ function RecommendedSupervisors({ recommendations, isLoading, canRequest, onRequ
                 <button
                   onClick={() => onRequest(sup)}
                   disabled={!canRequest(sup)}
+                  title={isTestingRestricted(sup) ? 'During testing you can only request your own supervisor account' : undefined}
                   className="mt-3 w-full py-1.5 rounded-lg bg-primary text-white text-sm hover:bg-primary-light disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <UserPlus className="w-4 h-4" />
                   Request Supervision
                 </button>
+                {isTestingRestricted(sup) && (
+                  <p className="mt-1.5 text-[11px] text-amber-600 flex items-center gap-1">
+                    <FlaskConical className="w-3 h-3 flex-shrink-0" />
+                    Testing mode: only your own supervisor account is requestable.
+                  </p>
+                )}
               </div>
             );
           })}
@@ -256,7 +289,7 @@ function RecommendedSupervisors({ recommendations, isLoading, canRequest, onRequ
   );
 }
 
-function SupervisorCard({ supervisor: sup, canRequest, onRequest }) {
+function SupervisorCard({ supervisor: sup, canRequest, isTestingRestricted, onRequest }) {
   const expertise = Array.isArray(sup.expertise) ? sup.expertise : [];
   return (
     <div className="bg-card rounded-xl p-6 border shadow-sm hover:shadow-md transition">
@@ -283,11 +316,18 @@ function SupervisorCard({ supervisor: sup, canRequest, onRequest }) {
       <button
         onClick={onRequest}
         disabled={!canRequest}
+        title={isTestingRestricted ? 'During testing you can only request your own supervisor account' : undefined}
         className="mt-4 w-full py-2 rounded-lg bg-primary text-white hover:bg-primary-light disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         <UserPlus className="w-4 h-4" />
         Request Supervision
       </button>
+      {isTestingRestricted && (
+        <p className="mt-1.5 text-[11px] text-amber-600 flex items-center gap-1">
+          <FlaskConical className="w-3 h-3 flex-shrink-0" />
+          Testing mode: only your own supervisor account is requestable.
+        </p>
+      )}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { User, SupervisorProfile, StudentProfile, Submission, SubmissionAttachment } from '../models/index.js';
 import { Op } from 'sequelize';
-import { recommendSupervisors, recomputeSupervisorEmbedding } from '../services/embeddingService.js';
+import { recommendSupervisors, recomputeSupervisorEmbedding, clearSupervisorEmbeddingCache } from '../services/embeddingService.js';
 
 export const listSupervisors = async (req, res) => {
   try {
@@ -203,6 +203,7 @@ export const updateExpertise = async (req, res) => {
 
     await profile.update({ expertise });
     await recomputeSupervisorEmbedding(profile);
+    clearSupervisorEmbeddingCache(profile.id);
 
     res.json({ success: true, data: { expertise: profile.expertise }, message: 'Expertise updated.' });
   } catch (error) {
@@ -218,7 +219,12 @@ export const getRecommendations = async (req, res) => {
       return res.status(404).json({ success: false, error: 'Student profile not found.' });
     }
 
-    const description = req.query.description || studentProfile.project_description;
+    // Combine title + description so strong title keywords also drive the match.
+    const description =
+      req.query.description ||
+      [studentProfile.fyp_title, studentProfile.project_description]
+        .filter(Boolean)
+        .join('. ');
     if (!description || !description.trim()) {
       return res.status(400).json({ success: false, error: 'No project description provided.' });
     }

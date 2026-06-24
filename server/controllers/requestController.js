@@ -23,6 +23,10 @@ export const createRequest = async (req, res) => {
       return res.status(400).json({ success: false, error: 'You already have a pending supervision request.' });
     }
 
+    if (req.user.is_multi_role && Number(supervisor_id) !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Testing accounts can only request supervision from their own supervisor identity.' });
+    }
+
     const supervisorProfile = await SupervisorProfile.findOne({ where: { user_id: supervisor_id } });
     if (!supervisorProfile) {
       return res.status(404).json({ success: false, error: 'Supervisor not found.' });
@@ -141,7 +145,8 @@ export const acceptRequest = async (req, res) => {
       student: request.student,
       supervisor: request.supervisor,
       title: request.title_proposed,
-      date: new Date()
+      date: new Date(),
+      studentProfile
     });
 
     await OfficialDocument.create({

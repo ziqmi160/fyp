@@ -1,9 +1,10 @@
 import bcrypt from 'bcryptjs';
-import { User, SupervisorProfile } from '../models/index.js';
+import { User, SupervisorProfile, Class } from '../models/index.js';
+import { createDefaultTasksForClass } from './taskController.js';
 
 export const createCoordinator = async (req, res) => {
   try {
-    const { name, email, password, coordinator_phase } = req.body;
+    const { name, email, password, coordinator_phase, academic_year, classes } = req.body;
 
     if (!name || !email || !password || !coordinator_phase) {
       return res.status(400).json({ success: false, error: 'Name, email, password, and phase are required.' });
@@ -29,10 +30,26 @@ export const createCoordinator = async (req, res) => {
       coordinator_phase
     });
 
+    // Auto-create classes if provided
+    const classNames = typeof classes === 'string'
+      ? classes.split(',').map(s => s.trim()).filter(Boolean)
+      : (Array.isArray(classes) ? classes : []);
+
+    for (const className of classNames) {
+      const cls = await Class.create({
+        name: className,
+        phase: coordinator_phase,
+        coordinator_id: user.id,
+        academic_year: academic_year || null,
+        is_active: true,
+      });
+      await createDefaultTasksForClass(cls.id, coordinator_phase, user.id);
+    }
+
     res.status(201).json({
       success: true,
       data: { user: { id: user.id, name: user.name, email: user.email, role: user.role } },
-      message: 'Coordinator account created.'
+      message: `Coordinator account created${classNames.length ? ` with ${classNames.length} class(es)` : ''}.`
     });
   } catch (error) {
     console.error('Create coordinator error:', error);
@@ -46,7 +63,17 @@ export const listCoordinators = async (req, res) => {
       where: { role: 'coordinator' },
       order: [['created_at', 'DESC']]
     });
-    res.json({ success: true, data: { coordinators } });
+
+    const withClasses = await Promise.all(coordinators.map(async (c) => {
+      const classes = await Class.findAll({
+        where: { coordinator_id: c.id },
+        attributes: ['id', 'name', 'phase', 'academic_year'],
+        order: [['name', 'ASC']]
+      });
+      return { ...c.toJSON(), classes };
+    }));
+
+    res.json({ success: true, data: { coordinators: withClasses } });
   } catch (error) {
     console.error('List coordinators error:', error);
     res.status(500).json({ success: false, error: 'Server error.' });

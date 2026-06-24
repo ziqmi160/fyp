@@ -196,13 +196,15 @@ export default function CoordinatorStudents() {
                 <td className="p-4">{s.examiner_name || '-'}</td>
                 <td className="p-4"><StatusBadge status={s.fyp_status} /></td>
                 <td className="p-4 text-right">
-                  <button
-                    onClick={() => setEditingStudent(s)}
-                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                    title="Edit student"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => setEditingStudent(s)}
+                      className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                      title="Edit student"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

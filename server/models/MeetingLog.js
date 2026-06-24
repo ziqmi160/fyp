@@ -47,6 +47,26 @@ const MeetingLog = sequelize.define('MeetingLog', {
     type: DataTypes.ENUM('scheduled', 'completed', 'cancelled'),
     defaultValue: 'scheduled'
   },
+  completed_activity: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  supervisor_signature_img: {
+    type: DataTypes.TEXT('medium'),
+    allowNull: true
+  },
+  student_signature_img: {
+    type: DataTypes.TEXT('medium'),
+    allowNull: true
+  },
+  supervisor_signed_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  student_signed_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   created_by: {
     type: DataTypes.INTEGER,
     allowNull: false,

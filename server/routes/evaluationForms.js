@@ -1,12 +1,19 @@
 import express from 'express';
 import { verifyToken, requireRole } from '../middleware/auth.js';
 import {
+  getAllTemplates,
   getRubricTemplate,
-  getEvaluationForms,
-  createEvaluationForm,
-  updateEvaluationForm,
+  updateRubricTemplate,
+  getEvaluableStudents,
+  getCoordinatorEvaluableStudents,
   getMyEvaluationForms,
-  getStudentEvaluationForms,
+  getStudentForms,
+  getClassEvaluationForms,
+  upsertEvaluationForm,
+  coordinatorUpsertEvaluationForm,
+  updateEvaluationForm,
+  signEvaluationForm,
+  downloadEvaluationFormPDF,
   deleteEvaluationForm
 } from '../controllers/evaluationFormController.js';
 
@@ -14,19 +21,31 @@ const router = express.Router();
 
 router.use(verifyToken);
 
-// Public routes for getting rubric templates
+// ── Rubric templates ─────────────────────────────────────────────────────────
+router.get('/templates', getAllTemplates);
 router.get('/templates/:formType', getRubricTemplate);
+router.put('/templates/:formType', requireRole('coordinator'), updateRubricTemplate);
 
-// Coordinator routes
-router.get('/', requireRole('coordinator'), getEvaluationForms);
+// ── Supervisor: evaluable students + forms ────────────────────────────────────
+router.get('/students', requireRole('supervisor'), getEvaluableStudents);
+router.get('/my', requireRole('supervisor'), getMyEvaluationForms);
+router.post('/', requireRole('supervisor'), upsertEvaluationForm);
 
-// Supervisor/Examiner routes
-router.get('/my-forms', requireRole('supervisor'), getMyEvaluationForms);
-router.post('/', requireRole('supervisor'), createEvaluationForm);
-router.put('/:id', requireRole('supervisor'), updateEvaluationForm);
-router.delete('/:id', requireRole('supervisor'), deleteEvaluationForm);
+// ── Coordinator: evaluable students + forms ───────────────────────────────────
+router.get('/coordinator/students', requireRole('coordinator'), getCoordinatorEvaluableStudents);
+router.get('/coordinator/my', requireRole('coordinator'), getMyEvaluationForms);
+router.get('/coordinator/all', requireRole('coordinator'), getClassEvaluationForms);
+router.post('/coordinator', requireRole('coordinator'), coordinatorUpsertEvaluationForm);
 
-// Student routes
-router.get('/my-evaluations', requireRole('student'), getStudentEvaluationForms);
+// ── Student forms (coordinator view) ─────────────────────────────────────────
+router.get('/student/:studentId', requireRole('coordinator'), getStudentForms);
+
+// ── Update / sign / delete (supervisor or coordinator who owns the form) ──────
+router.put('/:id', requireRole(['supervisor', 'coordinator']), updateEvaluationForm);
+router.post('/:id/sign', requireRole(['supervisor', 'coordinator']), signEvaluationForm);
+router.delete('/:id', requireRole(['supervisor', 'coordinator']), deleteEvaluationForm);
+
+// ── PDF download (own form OR coordinator) ────────────────────────────────────
+router.get('/:id/download', downloadEvaluationFormPDF);
 
 export default router;

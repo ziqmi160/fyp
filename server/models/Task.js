@@ -29,6 +29,16 @@ const Task = sequelize.define('Task', {
     allowNull: false,
     references: { model: 'users', key: 'id' }
   },
+  form_type: {
+    type: DataTypes.ENUM('F2', 'F3', 'F4'),
+    allowNull: true,
+    defaultValue: null
+  },
+  rubric: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null
+  },
   order_index: {
     // controls display order within a class (e.g. Chapter 1 before Chapter 2)
     type: DataTypes.INTEGER,

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, Edit2, Trash2, X, BookOpen, GraduationCap } from 'lucide-react';
+import { Users, Edit2, Trash2, X, BookOpen, GraduationCap, Plus } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -42,15 +42,15 @@ export default function ClassManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold">Class Management</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Create and manage your FYP classes</p>
+          <h2 className="text-xl font-semibold">Classes</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Classes you coordinate. You can manage as many classes as you need.</p>
         </div>
         <button
           onClick={() => { setEditTarget(null); setShowForm(true); }}
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
         >
           <Plus className="w-4 h-4" />
-          New Class
+          Add Class
         </button>
       </div>
 
@@ -62,7 +62,7 @@ export default function ClassManagement() {
         <div className="bg-card rounded-xl border p-12 text-center text-gray-500">
           <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300" />
           <p className="font-medium">No classes yet</p>
-          <p className="text-sm mt-1">Create your first class to start organising students.</p>
+          <p className="text-sm mt-1">Use “Add Class” above to create your first class.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

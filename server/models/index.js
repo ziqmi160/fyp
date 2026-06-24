@@ -18,6 +18,7 @@ import EvaluationForm from './EvaluationForm.js';
 import PresentationSession from './PresentationSession.js';
 import PresentationSlot from './PresentationSlot.js';
 import Amendment from './Amendment.js';
+import TaskEvaluation from './TaskEvaluation.js';
 import ConsultationMeetingFactory from './ConsultationMeeting.js';
 import ResourceLibrary from './ResourceLibrary.js';
 import PlagiarismCheck from './PlagiarismCheck.js';
@@ -25,6 +26,8 @@ import EthicalApproval from './EthicalApproval.js';
 import Deliverable from './Deliverable.js';
 import Exhibition from './Exhibition.js';
 import ExhibitionAttendance from './ExhibitionAttendance.js';
+import F6Form from './F6Form.js';
+import RubricTemplate from './RubricTemplate.js';
 const ConsultationMeeting = ConsultationMeetingFactory(sequelize);
 
 // Class associations
@@ -84,6 +87,10 @@ Submission.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 Submission.belongsTo(User, { foreignKey: 'supervisor_id', as: 'supervisor' });
 Submission.hasMany(SubmissionAttachment, { foreignKey: 'submission_id' });
 SubmissionAttachment.belongsTo(Submission, { foreignKey: 'submission_id' });
+Submission.hasOne(F6Form, { foreignKey: 'submission_id', as: 'f6Form' });
+F6Form.belongsTo(Submission, { foreignKey: 'submission_id', as: 'submission' });
+F6Form.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+F6Form.belongsTo(User, { foreignKey: 'supervisor_id', as: 'supervisor' });
 
 MeetingLog.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 MeetingLog.belongsTo(User, { foreignKey: 'supervisor_id', as: 'supervisor' });
@@ -116,6 +123,14 @@ PresentationSlot.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 PresentationSlot.belongsTo(User, { foreignKey: 'supervisor_id', as: 'supervisor' });
 PresentationSlot.belongsTo(User, { foreignKey: 'examiner_id', as: 'examiner' });
 
+// TaskEvaluation associations
+TaskEvaluation.belongsTo(Task, { foreignKey: 'task_id', as: 'task' });
+Task.hasMany(TaskEvaluation, { foreignKey: 'task_id', as: 'evaluations' });
+TaskEvaluation.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+TaskEvaluation.belongsTo(User, { foreignKey: 'evaluator_id', as: 'evaluator' });
+TaskEvaluation.belongsTo(Submission, { foreignKey: 'submission_id', as: 'submission' });
+User.hasMany(TaskEvaluation, { foreignKey: 'student_id', as: 'taskEvaluations' });
+
 Amendment.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
 Amendment.belongsTo(User, { foreignKey: 'evaluator_id', as: 'evaluator' });
 Amendment.belongsTo(Submission, { foreignKey: 'submission_id' });
@@ -147,6 +162,7 @@ User.hasMany(ExhibitionAttendance, { foreignKey: 'student_id' });
 
 export {
   sequelize,
+  TaskEvaluation,
   User,
   Class,
   Task,
@@ -172,5 +188,7 @@ export {
   EthicalApproval,
   Deliverable,
   Exhibition,
-  ExhibitionAttendance
+  ExhibitionAttendance,
+  F6Form,
+  RubricTemplate
 };

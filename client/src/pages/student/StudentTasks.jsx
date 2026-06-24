@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ClipboardList, CheckCircle2, Clock, AlertCircle, Upload, FileText,
-  X, ExternalLink, ChevronDown, ChevronUp
+  X, ExternalLink, ChevronDown, ChevronUp, MessageSquare
 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -130,7 +130,7 @@ export default function StudentTasks() {
                 </div>
 
                 {isExpanded && submitted && (
-                  <div className="border-t bg-gray-50 px-4 py-3">
+                  <div className="border-t bg-gray-50 px-4 py-3 space-y-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div>
                         <p className="text-sm font-medium text-gray-700">{task.my_submission.title}</p>
@@ -142,6 +142,15 @@ export default function StudentTasks() {
                       </div>
                       <StatusBadge status={task.my_submission.status} />
                     </div>
+                    {task.my_submission.supervisor_feedback && (
+                      <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                        <MessageSquare className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-xs font-semibold text-blue-700 mb-0.5">Supervisor Feedback</p>
+                          <p className="text-sm text-blue-900">{task.my_submission.supervisor_feedback}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

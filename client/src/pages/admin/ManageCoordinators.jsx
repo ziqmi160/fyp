@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { UserPlus, UserX, RotateCcw, ChevronDown, ChevronUp, Edit2 } from 'lucide-react';
+import { UserPlus, UserX, RotateCcw, ChevronDown, ChevronUp, Edit2, BookOpen } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,11 +12,14 @@ const schema = z.object({
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   coordinator_phase: z.enum(['CSP600', 'CSP650'], { required_error: 'Phase is required' }),
+  academic_year: z.string().optional(),
+  classes: z.string().optional(),
 });
 
 export default function ManageCoordinators() {
   const [showForm, setShowForm] = useState(false);
   const [editingPhase, setEditingPhase] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
   const qc = useQueryClient();
 
   const { data: coordinators = [], isLoading } = useQuery({
@@ -87,49 +90,80 @@ export default function ManageCoordinators() {
       {showForm && (
         <div className="bg-card rounded-xl border p-6">
           <h3 className="font-medium mb-4">New Coordinator Account</h3>
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input
-                {...register('name')}
-                type="text"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                placeholder="Dr. Coordinator Name"
-              />
-              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  {...register('name')}
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                  placeholder="Dr. Coordinator Name"
+                />
+                {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  {...register('email')}
+                  type="email"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                  placeholder="coordinator@uitm.edu.my"
+                />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  {...register('password')}
+                  type="password"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                />
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Phase</label>
+                <select
+                  {...register('coordinator_phase')}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                >
+                  <option value="">Select phase...</option>
+                  <option value="CSP600">CSP600</option>
+                  <option value="CSP650">CSP650</option>
+                </select>
+                {errors.coordinator_phase && <p className="text-red-500 text-xs mt-1">{errors.coordinator_phase.message}</p>}
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                {...register('email')}
-                type="email"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-                placeholder="coordinator@uitm.edu.my"
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Academic Year <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  {...register('academic_year')}
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                  placeholder="e.g. 2024/2025"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Classes <span className="text-gray-400 font-normal">(optional — comma-separated group names)</span>
+                </label>
+                <input
+                  {...register('classes')}
+                  type="text"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                  placeholder="e.g. 2305A, 2305B, 2305C"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  Classes will be auto-created with default tasks for the selected phase.
+                </p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input
-                {...register('password')}
-                type="password"
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-              />
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Phase</label>
-              <select
-                {...register('coordinator_phase')}
-                className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
-              >
-                <option value="">Select phase...</option>
-                <option value="CSP600">CSP600</option>
-                <option value="CSP650">CSP650</option>
-              </select>
-              {errors.coordinator_phase && <p className="text-red-500 text-xs mt-1">{errors.coordinator_phase.message}</p>}
-            </div>
-            <div className="md:col-span-4 flex gap-3">
+
+            <div className="flex gap-3">
               <button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending}
@@ -165,6 +199,7 @@ export default function ManageCoordinators() {
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Name</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Email</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Phase</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-600">Classes</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Status</th>
                 <th className="text-left p-4 text-sm font-medium text-gray-600">Actions</th>
               </tr>
@@ -202,6 +237,30 @@ export default function ManageCoordinators() {
                         <button onClick={() => setEditingPhase({ id: c.id, phase: c.coordinator_phase || 'CSP600' })} className="text-gray-400 hover:text-gray-600">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    {c.classes?.length > 0 ? (
+                      <button
+                        onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        {c.classes.length} class{c.classes.length !== 1 ? 'es' : ''}
+                        {expandedId === c.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">None</span>
+                    )}
+                    {expandedId === c.id && c.classes?.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {c.classes.map(cls => (
+                          <span key={cls.id} className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                            {cls.name}
+                            {cls.academic_year && <span className="text-gray-400 ml-1">· {cls.academic_year}</span>}
+                          </span>
+                        ))}
                       </div>
                     )}
                   </td>

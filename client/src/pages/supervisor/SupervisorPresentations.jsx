@@ -109,7 +109,7 @@ export default function SupervisorPresentations() {
     queryKey: ['supervisor-presentation-slots'],
     queryFn: async () => {
       const { data } = await api.get('/presentation-sessions/my-slots');
-      return data || [];
+      return data.data || [];
     },
   });
 

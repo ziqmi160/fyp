@@ -1,5 +1,152 @@
-import { EvaluationForm, User, StudentProfile, SupervisorProfile, ExaminerAssignment, PresentationSlot, Amendment } from '../models/index.js';
+import { EvaluationForm, User, StudentProfile, SupervisorProfile, ExaminerAssignment, PresentationSlot, Amendment, Class, Task, TaskEvaluation } from '../models/index.js';
 import { Op } from 'sequelize';
+
+// Human-readable names for each F-form, used in the marks breakdown.
+const FORM_NAMES = {
+  F2: 'Project Motivation',
+  F3: 'Literature Review',
+  F4: 'Methodology',
+  F7: 'Project Formulation Presentation',
+  F8: 'Project Formulation Report',
+  F9: 'Progress Presentation',
+  F10: 'Final Presentation',
+  F11: 'Project Report',
+  F13: 'Lean Canvas Model',
+};
+
+// Returns the user_ids of every student in the coordinator's classes,
+// keyed for quick lookup with class/profile context.
+async function getCoordinatorStudentContext(coordinatorId) {
+  const classes = await Class.findAll({
+    where: { coordinator_id: coordinatorId },
+    include: [{
+      model: StudentProfile,
+      as: 'students',
+      include: [{ model: User, as: 'studentUser', attributes: ['id', 'name', 'email'] }],
+    }],
+  });
+  const context = {};
+  for (const cls of classes) {
+    for (const profile of cls.students) {
+      context[profile.user_id] = { profile, cls };
+    }
+  }
+  return context;
+}
+
+// GET /marks/coordinator — consolidated marks for the coordinator's own
+// students, one row per student with each submitted evaluation form listed.
+export const getCoordinatorMarks = async (req, res) => {
+  try {
+    const { phase, class_id, student_id } = req.query;
+    const context = await getCoordinatorStudentContext(req.user.id);
+    let studentIds = Object.keys(context).map(Number);
+
+    if (class_id) {
+      studentIds = studentIds.filter(id => String(context[id].cls.id) === String(class_id));
+    }
+    if (student_id) {
+      studentIds = studentIds.filter(id => String(id) === String(student_id));
+    }
+
+    if (studentIds.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+
+    const byStudent = {};
+    for (const id of studentIds) {
+      const { profile, cls } = context[id];
+      byStudent[id] = {
+        student_id: id,
+        name: profile.studentUser?.name || '',
+        matric: profile.student_id || '',
+        programme: profile.programme || '',
+        class_name: cls.name,
+        phase: profile.current_phase || cls.phase,
+        forms: [],
+        total_score: 0,
+        max_score: 0,
+      };
+    }
+
+    // ── Evaluation-form pipeline (F7–F11, F13) ──────────────────────────────
+    const evalWhere = { student_id: { [Op.in]: studentIds }, status: 'submitted' };
+    if (phase) evalWhere.phase = phase;
+    const evalForms = await EvaluationForm.findAll({
+      where: evalWhere,
+      include: [{ model: User, as: 'evaluator', attributes: ['id', 'name'] }],
+      order: [['form_type', 'ASC'], ['evaluator_role', 'ASC']],
+    });
+
+    for (const f of evalForms) {
+      const row = byStudent[f.student_id];
+      if (!row) continue;
+      const total = parseFloat(f.total_score) || 0;
+      const max = parseFloat(f.max_score) || 0;
+      row.forms.push({
+        id: `ef-${f.id}`,
+        form_type: f.form_type,
+        form_name: FORM_NAMES[f.form_type] || f.form_type,
+        evaluator_role: f.evaluator_role,
+        evaluator_name: f.evaluator?.name || '',
+        total_score: total,
+        max_score: max,
+        percentage: max > 0 ? Math.round((total / max) * 1000) / 10 : null,
+      });
+      row.total_score += total;
+      row.max_score += max;
+    }
+
+    // ── Task-graded forms (F2/F3/F4) via TaskEvaluation ─────────────────────
+    const taskEvals = await TaskEvaluation.findAll({
+      where: { student_id: { [Op.in]: studentIds }, status: 'submitted' },
+      include: [
+        { model: Task, as: 'task', attributes: ['id', 'form_type'], where: { form_type: { [Op.ne]: null } } },
+        { model: User, as: 'evaluator', attributes: ['id', 'name'] },
+      ],
+    });
+
+    for (const te of taskEvals) {
+      const row = byStudent[te.student_id];
+      if (!row) continue;
+      const formType = te.task?.form_type;
+      if (!formType) continue;
+      const total = parseFloat(te.total_marks) || 0;
+      // Max = sum of weight * score_max from the rubric snapshot used at grading.
+      const max = (te.rubric_snapshot || []).reduce(
+        (sum, c) => sum + (parseFloat(c.weight) || 0) * (parseFloat(c.score_max) || 0), 0
+      );
+      row.forms.push({
+        id: `te-${te.id}`,
+        form_type: formType,
+        form_name: FORM_NAMES[formType] || formType,
+        evaluator_role: 'coordinator',
+        evaluator_name: te.evaluator?.name || '',
+        total_score: total,
+        max_score: max,
+        percentage: max > 0 ? Math.round((total / max) * 1000) / 10 : null,
+      });
+      row.total_score += total;
+      row.max_score += max;
+    }
+
+    // Sort each student's forms by F-number for a stable, readable breakdown.
+    const formOrder = (ft) => parseInt(String(ft).replace(/\D/g, ''), 10) || 0;
+
+    const data = Object.values(byStudent)
+      .map(r => ({
+        ...r,
+        forms: r.forms.sort((a, b) => formOrder(a.form_type) - formOrder(b.form_type)),
+        percentage: r.max_score > 0 ? Math.round((r.total_score / r.max_score) * 1000) / 10 : null,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Get coordinator marks error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
 
 export const getStudentMarks = async (req, res) => {
   try {

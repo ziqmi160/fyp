@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Edit2, Trash2, X, ClipboardList, ChevronDown, ChevronUp,
-  CheckCircle2, Clock, AlertCircle, Users
+  CheckCircle2, Clock, AlertCircle, Users, Download
 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 export default function CoordinatorTasks() {
   const [filterClass, setFilterClass] = useState('');
+  const [sortBy, setSortBy] = useState('created'); // 'created' | 'deadline'
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -51,24 +52,31 @@ export default function CoordinatorTasks() {
     onError: (err) => toast.error(err.response?.data?.error || 'Failed to delete'),
   });
 
-  // Group tasks by class
+  const sortTasks = (list) => {
+    const sorted = [...list];
+    if (sortBy === 'deadline') {
+      // tasks without a deadline sort to the end
+      sorted.sort((a, b) => {
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return new Date(a.due_date) - new Date(b.due_date);
+      });
+    } else {
+      sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    }
+    return sorted;
+  };
+
   const tasksByClass = tasks.reduce((acc, t) => {
     const key = t.class_id;
     if (!acc[key]) acc[key] = { class: t.class, tasks: [] };
     acc[key].tasks.push(t);
     return acc;
   }, {});
+  Object.values(tasksByClass).forEach(group => { group.tasks = sortTasks(group.tasks); });
 
-  const openEdit = (task) => {
-    setEditTarget(task);
-    setShowForm(true);
-  };
-
-  const closeForm = () => {
-    setShowForm(false);
-    setEditTarget(null);
-  };
-
+  const openEdit = (task) => { setEditTarget(task); setShowForm(true); };
+  const closeForm = () => { setShowForm(false); setEditTarget(null); };
   const toggleExpand = (id) => setExpandedTask(prev => prev === id ? null : id);
 
   return (
@@ -76,7 +84,7 @@ export default function CoordinatorTasks() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Tasks</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Assign tasks with deadlines to your classes</p>
+          <p className="text-sm text-gray-500 mt-0.5">Manage tasks and due dates for your classes</p>
         </div>
         <div className="flex gap-2">
           <select
@@ -88,6 +96,15 @@ export default function CoordinatorTasks() {
             {classes.map(c => (
               <option key={c.id} value={c.id}>{c.name} ({c.phase})</option>
             ))}
+          </select>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 border rounded-lg text-sm"
+            title="Sort tasks"
+          >
+            <option value="created">Sort: Date created</option>
+            <option value="deadline">Sort: Deadline</option>
           </select>
           <button
             onClick={() => { setEditTarget(null); setShowForm(true); }}
@@ -107,7 +124,7 @@ export default function CoordinatorTasks() {
         <div className="bg-card rounded-xl border p-12 text-center text-gray-500">
           <ClipboardList className="w-12 h-12 mx-auto mb-3 text-gray-300" />
           <p className="font-medium">No tasks yet</p>
-          <p className="text-sm mt-1">Create tasks for your classes — students will see them and submit against each one.</p>
+          <p className="text-sm mt-1">Default tasks are auto-created when classes are set up. You can also add extra tasks here.</p>
         </div>
       ) : (
         <div className="space-y-8">
@@ -120,7 +137,6 @@ export default function CoordinatorTasks() {
                 </span>
                 <span className="text-xs text-gray-400">{classTasks.length} task{classTasks.length !== 1 ? 's' : ''}</span>
               </div>
-
               <div className="space-y-3">
                 {classTasks.map((task) => (
                   <TaskRow
@@ -144,10 +160,7 @@ export default function CoordinatorTasks() {
           initial={editTarget}
           classes={classes}
           onClose={closeForm}
-          onSuccess={() => {
-            qc.invalidateQueries(['coordinator-tasks']);
-            closeForm();
-          }}
+          onSuccess={() => { qc.invalidateQueries(['coordinator-tasks']); closeForm(); }}
         />
       )}
 
@@ -163,7 +176,30 @@ export default function CoordinatorTasks() {
   );
 }
 
+// ─── TaskRow ──────────────────────────────────────────────────────────────────
+
 function TaskRow({ task, isExpanded, detail, onToggle, onEdit, onDelete }) {
+  const [downloading, setDownloading] = useState(false);
+
+  const downloadAll = async () => {
+    setDownloading(true);
+    try {
+      const resp = await api.get(`/tasks/coordinator/${task.id}/submissions/download`, { responseType: 'blob' });
+      const url = URL.createObjectURL(resp.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${task.title.replace(/[^a-z0-9]+/gi, '_')}_submissions.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('No file submissions to download.');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const hasFiles = detail?.submissions?.some(s => (s.SubmissionAttachments || []).length > 0);
+
   const now = new Date();
   const due = task.due_date ? new Date(task.due_date) : null;
   const isOverdue = due && due < now;
@@ -195,18 +231,13 @@ function TaskRow({ task, isExpanded, detail, onToggle, onEdit, onDelete }) {
               {due.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
           )}
-
           <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <Users className="w-3.5 h-3.5" />
             <span>{submittedCount}/{totalCount}</span>
             <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all"
-                style={{ width: `${pct}%` }}
-              />
+              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
             </div>
           </div>
-
           <div className="flex gap-1">
             <button onClick={onEdit} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700">
               <Edit2 className="w-4 h-4" />
@@ -228,41 +259,55 @@ function TaskRow({ task, isExpanded, detail, onToggle, onEdit, onDelete }) {
               <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-primary" />
             </div>
           ) : (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Submitted ({detail.submissions.length})</p>
-                  {detail.submissions.length === 0 ? (
-                    <p className="text-sm text-gray-400 italic">None yet</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {detail.submissions.map(s => (
-                        <li key={s.id} className="flex items-center gap-2 text-sm">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                          <span className="font-medium">{s.student?.name}</span>
-                          <span className="text-gray-400 text-xs ml-auto">
-                            {new Date(s.submitted_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    Submitted ({detail.submissions.length})
+                  </p>
+                  {hasFiles && (
+                    <button
+                      onClick={downloadAll}
+                      disabled={downloading}
+                      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium disabled:opacity-50"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      {downloading ? 'Preparing…' : 'Download all'}
+                    </button>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Not Submitted ({detail.not_submitted.length})</p>
-                  {detail.not_submitted.length === 0 ? (
-                    <p className="text-sm text-green-600 font-medium">All students submitted!</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {detail.not_submitted.map(s => (
-                        <li key={s.user_id} className="flex items-center gap-2 text-sm text-gray-600">
-                          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                          {s.name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                {detail.submissions.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">None yet</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {detail.submissions.map(s => (
+                      <li key={s.id} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        <span className="font-medium">{s.student?.name}</span>
+                        <span className="text-gray-400 text-xs ml-auto">
+                          {new Date(s.submitted_at).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
+                  Not Submitted ({detail.not_submitted.length})
+                </p>
+                {detail.not_submitted.length === 0 ? (
+                  <p className="text-sm text-green-600 font-medium">All students submitted!</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {detail.not_submitted.map(s => (
+                      <li key={s.user_id} className="flex items-center gap-2 text-sm text-gray-600">
+                        <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        {s.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
           )}
@@ -272,13 +317,15 @@ function TaskRow({ task, isExpanded, detail, onToggle, onEdit, onDelete }) {
   );
 }
 
+// ─── TaskFormModal ────────────────────────────────────────────────────────────
+
 function TaskFormModal({ initial, classes, onClose, onSuccess }) {
   const [form, setForm] = useState({
     title: initial?.title || '',
     description: initial?.description || '',
     class_id: initial?.class_id ? String(initial.class_id) : '',
-    due_date: initial?.due_date || '',
-    order_index: initial?.order_index ?? 0,
+    due_date: initial?.due_date ? initial.due_date.slice(0, 10) : '',
+    apply_to_all: false,
   });
   const [errors, setErrors] = useState({});
 
@@ -297,7 +344,7 @@ function TaskFormModal({ initial, classes, onClose, onSuccess }) {
   const validate = () => {
     const e = {};
     if (!form.title.trim()) e.title = 'Title is required.';
-    if (!initial && !form.class_id) e.class_id = 'Select a class.';
+    if (!initial && !form.apply_to_all && !form.class_id) e.class_id = 'Select a class.';
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -308,15 +355,15 @@ function TaskFormModal({ initial, classes, onClose, onSuccess }) {
     mutation.mutate({
       title: form.title.trim(),
       description: form.description.trim() || null,
-      class_id: parseInt(form.class_id),
+      class_id: form.apply_to_all ? undefined : parseInt(form.class_id),
       due_date: form.due_date || null,
-      order_index: Number(form.order_index) || 0,
+      apply_to_all: !initial && form.apply_to_all,
     });
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 my-4">
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-lg font-semibold">{initial ? 'Edit Task' : 'New Task'}</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
@@ -331,14 +378,16 @@ function TaskFormModal({ initial, classes, onClose, onSuccess }) {
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Chapter 1 Submission"
+              placeholder="e.g. Additional Assignment"
               className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent ${errors.title ? 'border-red-400' : 'border-gray-300'}`}
             />
             {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400 font-normal">(optional)</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -349,42 +398,46 @@ function TaskFormModal({ initial, classes, onClose, onSuccess }) {
           </div>
 
           {!initial && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-              <select
-                value={form.class_id}
-                onChange={(e) => setForm({ ...form, class_id: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent ${errors.class_id ? 'border-red-400' : 'border-gray-300'}`}
-              >
-                <option value="">Select a class</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.phase})</option>
-                ))}
-              </select>
-              {errors.class_id && <p className="text-xs text-red-500 mt-1">{errors.class_id}</p>}
-            </div>
+            <>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.apply_to_all}
+                  onChange={(e) => setForm({ ...form, apply_to_all: e.target.checked })}
+                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                Create this task in all my classes
+              </label>
+
+              {!form.apply_to_all && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                  <select
+                    value={form.class_id}
+                    onChange={(e) => setForm({ ...form, class_id: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent ${errors.class_id ? 'border-red-400' : 'border-gray-300'}`}
+                  >
+                    <option value="">Select a class</option>
+                    {classes.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.phase})</option>
+                    ))}
+                  </select>
+                  {errors.class_id && <p className="text-xs text-red-500 mt-1">{errors.class_id}</p>}
+                </div>
+              )}
+            </>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date <span className="text-gray-400 font-normal">(optional)</span></label>
-              <input
-                type="date"
-                value={form.due_date}
-                onChange={(e) => setForm({ ...form, due_date: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Order</label>
-              <input
-                type="number"
-                min="0"
-                value={form.order_index}
-                onChange={(e) => setForm({ ...form, order_index: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Due Date <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              type="date"
+              value={form.due_date}
+              onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -408,6 +461,8 @@ function TaskFormModal({ initial, classes, onClose, onSuccess }) {
     </div>
   );
 }
+
+// ─── DeleteModal ──────────────────────────────────────────────────────────────
 
 function DeleteModal({ task, onConfirm, onClose, isPending }) {
   return (

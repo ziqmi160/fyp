@@ -9,7 +9,7 @@ import PhaseTracker from '../../components/common/PhaseTracker';
 import {
   FileText, Calendar, UserCheck, PlusCircle,
   CheckCircle2, Circle, Clock, AlertCircle, User, Users, Eye, TrendingUp,
-  BookOpen, X, RotateCcw, Send
+  BookOpen, X, Edit2
 } from 'lucide-react';
 
 function FypProposalCard({ profile, onUpdate }) {
@@ -25,54 +25,31 @@ function FypProposalCard({ profile, onUpdate }) {
     setEditing(true);
   };
 
-  const submitMutation = useMutation({
-    mutationFn: () => api.put('/users/profile/fyp-proposal', { fyp_title: title, project_description: description }),
+  const saveMutation = useMutation({
+    mutationFn: () => api.put('/users/profile/fyp-title', { fyp_title: title, project_description: description }),
     onSuccess: () => {
-      toast.success('FYP proposal submitted for review!');
+      toast.success('FYP title saved.');
       setEditing(false);
       onUpdate();
     },
-    onError: (err) => toast.error(err.response?.data?.error || 'Failed to submit'),
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to save'),
   });
-
-  const withdrawMutation = useMutation({
-    mutationFn: () => api.delete('/users/profile/fyp-proposal'),
-    onSuccess: () => {
-      toast.success('Proposal withdrawn.');
-      onUpdate();
-    },
-    onError: (err) => toast.error(err.response?.data?.error || 'Failed'),
-  });
-
-  const validate = () => {
-    const e = {};
-    if (!title.trim()) e.title = 'Title is required.';
-    if (!description.trim()) e.description = 'Description is required.';
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validate()) submitMutation.mutate();
+    const e2 = {};
+    if (!title.trim()) e2.title = 'Title is required.';
+    setErrors(e2);
+    if (Object.keys(e2).length === 0) saveMutation.mutate();
   };
 
-  const status = profile?.title_status || 'not_submitted';
-
-  const statusConfig = {
-    not_submitted: { bg: 'bg-gray-50 border-gray-200', badge: 'bg-gray-100 text-gray-600', label: 'Not Submitted', icon: <BookOpen className="w-5 h-5 text-gray-400" /> },
-    pending:       { bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-100 text-amber-700', label: 'Under Review', icon: <Clock className="w-5 h-5 text-amber-500" /> },
-    approved:      { bg: 'bg-green-50 border-green-200', badge: 'bg-green-100 text-green-700', label: 'Approved', icon: <CheckCircle2 className="w-5 h-5 text-green-500" /> },
-    rejected:      { bg: 'bg-red-50 border-red-200', badge: 'bg-red-100 text-red-700', label: 'Rejected', icon: <AlertCircle className="w-5 h-5 text-red-500" /> },
-  };
-
-  const cfg = statusConfig[status];
+  const hasTitle = !!profile?.fyp_title;
 
   if (editing) {
     return (
       <div className="bg-card rounded-xl border shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-secondary">FYP Title Registration</h3>
+          <h3 className="font-semibold text-secondary">FYP Title</h3>
           <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg hover:bg-gray-100">
             <X className="w-4 h-4 text-gray-500" />
           </button>
@@ -84,7 +61,7 @@ function FypProposalCard({ profile, onUpdate }) {
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter your FYP title"
+              placeholder="e.g. Smart Attendance System Using Face Recognition"
               className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent ${errors.title ? 'border-red-400' : 'border-gray-300'}`}
             />
             {errors.title && <p className="text-xs text-red-500 mt-1">{errors.title}</p>}
@@ -94,21 +71,19 @@ function FypProposalCard({ profile, onUpdate }) {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe your project, its objectives, and expected outcomes..."
+              placeholder="Describe your project — its problem statement, objectives, and expected outcomes..."
               rows={5}
-              className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent resize-none ${errors.description ? 'border-red-400' : 'border-gray-300'}`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
             />
-            {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description}</p>}
-            <p className="text-xs text-gray-400 mt-1">This description is also used by the system to match you with relevant supervisors.</p>
+            <p className="text-xs text-gray-400 mt-1">This description is used to match you with supervisors in the marketplace.</p>
           </div>
           <div className="flex gap-3">
             <button
               type="submit"
-              disabled={submitMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+              disabled={saveMutation.isPending}
+              className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
-              {submitMutation.isPending ? 'Submitting...' : 'Submit for Approval'}
+              {saveMutation.isPending ? 'Saving...' : 'Save'}
             </button>
             <button type="button" onClick={() => setEditing(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50">
               Cancel
@@ -120,62 +95,31 @@ function FypProposalCard({ profile, onUpdate }) {
   }
 
   return (
-    <div className={`rounded-xl border p-5 ${cfg.bg}`}>
+    <div className={`rounded-xl border p-5 ${hasTitle ? 'bg-card border-gray-200' : 'bg-amber-50 border-amber-200'}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
-          {cfg.icon}
+          <BookOpen className={`w-5 h-5 mt-0.5 shrink-0 ${hasTitle ? 'text-primary' : 'text-amber-500'}`} />
           <div>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-secondary text-sm">FYP Title Registration</p>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.badge}`}>{cfg.label}</span>
-            </div>
-            {profile?.fyp_title ? (
-              <p className="text-sm text-gray-700 mt-1">{profile.fyp_title}</p>
+            <p className="font-semibold text-secondary text-sm">FYP Title</p>
+            {hasTitle ? (
+              <>
+                <p className="text-sm text-gray-800 mt-0.5">{profile.fyp_title}</p>
+                {profile.project_description && (
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{profile.project_description}</p>
+                )}
+              </>
             ) : (
-              <p className="text-sm text-gray-500 mt-0.5">Register your FYP title and project description to get started.</p>
-            )}
-            {status === 'rejected' && profile?.title_feedback && (
-              <div className="mt-2 p-3 bg-red-100 rounded-lg border border-red-200">
-                <p className="text-xs font-medium text-red-700 mb-0.5">Coordinator feedback:</p>
-                <p className="text-sm text-red-700">{profile.title_feedback}</p>
-              </div>
+              <p className="text-sm text-amber-700 mt-0.5">Register your FYP title and description to enable supervisor matching.</p>
             )}
           </div>
         </div>
-
-        <div className="flex gap-2 shrink-0">
-          {(status === 'not_submitted' || status === 'rejected') && (
-            <button
-              onClick={openForm}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90"
-            >
-              {status === 'rejected' ? <RotateCcw className="w-3.5 h-3.5" /> : <Send className="w-3.5 h-3.5" />}
-              {status === 'rejected' ? 'Resubmit' : 'Submit Title'}
-            </button>
-          )}
-          {status === 'pending' && (
-            <>
-              <button
-                onClick={openForm}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-white/50"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => withdrawMutation.mutate()}
-                disabled={withdrawMutation.isPending}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-red-200 text-red-600 rounded-lg text-sm hover:bg-red-50 disabled:opacity-50"
-              >
-                Withdraw
-              </button>
-            </>
-          )}
-          {status === 'approved' && (
-            <button onClick={openForm} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-white/50 opacity-50 cursor-not-allowed" disabled>
-              Locked
-            </button>
-          )}
-        </div>
+        <button
+          onClick={openForm}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 shrink-0"
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+          {hasTitle ? 'Edit' : 'Register'}
+        </button>
       </div>
     </div>
   );
@@ -287,7 +231,7 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      <PhaseTracker profile={profile} submissions={submissions} />
+      {/* <PhaseTracker profile={profile} submissions={submissions} /> */}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="bg-card rounded-xl p-6 border shadow-sm">
@@ -342,109 +286,6 @@ export default function StudentDashboard() {
       </div>
 
       {/* Progress Tracker Section */}
-      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-secondary">FYP Progress Tracker</h3>
-          </div>
-          {studentProfile?.current_phase && (
-            <span className="px-3 py-1 bg-primary text-white rounded-full text-sm font-medium">
-              {studentProfile.current_phase}
-            </span>
-          )}
-        </div>
-
-        {progressLoading ? (
-          <div className="p-6 animate-pulse space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-12 bg-gray-200 rounded" />
-            ))}
-          </div>
-        ) : (
-          <div className="p-6 space-y-6">
-            {/* People info */}
-            {studentProfile && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center space-x-3">
-                  <User className="w-8 h-8 text-primary flex-shrink-0" />
-                  <div>
-                    <p className="text-xs text-gray-500">Student</p>
-                    <p className="font-semibold text-sm">{studentProfile.studentUser?.name}</p>
-                    <p className="text-xs text-gray-600">{studentProfile.student_id}</p>
-                  </div>
-                </div>
-                {studentProfile.supervisor && (
-                  <div className="flex items-center space-x-3">
-                    <Users className="w-8 h-8 text-blue-600 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">Supervisor</p>
-                      <p className="font-semibold text-sm">{studentProfile.supervisor.name}</p>
-                      <p className="text-xs text-gray-600">{studentProfile.supervisor.email}</p>
-                    </div>
-                  </div>
-                )}
-                {studentProfile.examiner && (
-                  <div className="flex items-center space-x-3">
-                    <Eye className="w-8 h-8 text-purple-600 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500">Examiner</p>
-                      <p className="font-semibold text-sm">{studentProfile.examiner.name}</p>
-                      <p className="text-xs text-gray-600">{studentProfile.examiner.email}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Timeline */}
-            {timeline && timeline.length > 0 && (
-              <div className="space-y-3">
-                {timeline.map((step) => (
-                  <div key={step.id} className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {statusIcons[step.status]}
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <div>
-                          <h4 className="font-medium text-secondary text-sm">{step.title}</h4>
-                          <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
-                        </div>
-                        <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium border ${statusColors[step.status]}`}>
-                          {step.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                      {step.completedAt && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          Completed: {new Date(step.completedAt).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Supervision request status if no supervisor yet */}
-            {supervisionRequest && !studentProfile?.supervisor && (
-              <div className="flex items-center justify-between py-2 border-t pt-4">
-                <div>
-                  <span className="text-sm font-medium">Supervision Request</span>
-                  <span className="text-xs text-gray-500 ml-2">{supervisionRequest.supervisor?.name}</span>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  supervisionRequest.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                  supervisionRequest.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {supervisionRequest.status}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

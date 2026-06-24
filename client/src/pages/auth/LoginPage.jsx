@@ -73,6 +73,10 @@ export default function LoginPage() {
             Don&apos;t have an account?{' '}
             <Link to="/register" className="text-primary font-medium hover:underline">Register</Link>
           </p>
+          <p className="text-center text-xs text-amber-600 mt-3 bg-amber-50 rounded-lg px-3 py-2">
+            Usability testing?{' '}
+            <Link to="/register-testing" className="font-semibold underline hover:text-amber-700">Create a test account</Link>
+          </p>
         </div>
       </div>
     </div>

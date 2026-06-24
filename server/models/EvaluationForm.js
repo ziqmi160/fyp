@@ -25,32 +25,45 @@ const EvaluationForm = sequelize.define('EvaluationForm', {
     type: DataTypes.ENUM('CSP600', 'CSP650'),
     allowNull: false
   },
+  evaluator_role: {
+    type: DataTypes.ENUM('supervisor', 'examiner', 'coordinator'),
+    allowNull: false,
+    defaultValue: 'supervisor'
+  },
   scores: {
     type: DataTypes.JSON,
     allowNull: false,
     defaultValue: {}
   },
   total_score: {
-    type: DataTypes.DECIMAL(5, 2),
+    type: DataTypes.DECIMAL(6, 2),
     allowNull: true
   },
   max_score: {
-    type: DataTypes.DECIMAL(5, 2),
+    type: DataTypes.DECIMAL(6, 2),
     allowNull: false
   },
   comments: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  recommendations: {
-    type: DataTypes.TEXT,
+  presentation_date: {
+    type: DataTypes.DATEONLY,
     allowNull: true
   },
   status: {
-    type: DataTypes.ENUM('draft', 'submitted', 'approved'),
+    type: DataTypes.ENUM('draft', 'submitted'),
     defaultValue: 'draft'
   },
   submitted_at: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  signature_img: {
+    type: DataTypes.TEXT('medium'),
+    allowNull: true
+  },
+  signed_at: {
     type: DataTypes.DATE,
     allowNull: true
   }

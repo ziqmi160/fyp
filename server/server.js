@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 
@@ -31,6 +32,7 @@ import ethicalApprovalRoutes from './routes/ethicalApprovalRoutes.js';
 import deliverableRoutes from './routes/deliverableRoutes.js';
 import exhibitionRoutes from './routes/exhibitionRoutes.js';
 import taskRoutes from './routes/taskRoutes.js';
+import f6Routes from './routes/f6Routes.js';
 import { warmUp } from './services/embeddingService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -74,6 +76,18 @@ app.use('/api/ethical-approval', ethicalApprovalRoutes);
 app.use('/api/deliverables', deliverableRoutes);
 app.use('/api/exhibitions', exhibitionRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/f6', f6Routes);
+
+// Serve the built React app (npm run build) for production / Docker deployments.
+// In local dev, Vite serves the client separately on :5173, so client/dist won't
+// exist and this block is simply skipped.
+const clientDistPath = path.join(__dirname, '../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get(/^\/(?!api|uploads).*/, (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

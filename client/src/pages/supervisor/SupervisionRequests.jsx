@@ -4,11 +4,13 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 import StatusBadge from '../../components/common/StatusBadge';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import { Check, X } from 'lucide-react';
+import { Check, X, Search } from 'lucide-react';
 
 export default function SupervisionRequests() {
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const qc = useQueryClient();
 
   const { data: requests = [] } = useQuery({
@@ -17,6 +19,13 @@ export default function SupervisionRequests() {
       const { data } = await api.get('/requests/incoming');
       return data.data || [];
     },
+  });
+
+  const filtered = requests.filter((r) => {
+    if (statusFilter && r.status !== statusFilter) return false;
+    if (!search) return true;
+    const haystack = `${r.student?.name || ''} ${r.title_proposed || ''}`.toLowerCase();
+    return haystack.includes(search.toLowerCase());
   });
 
   const { data: profile } = useQuery({
@@ -55,7 +64,30 @@ export default function SupervisionRequests() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Supervision Requests</h2>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <h2 className="text-xl font-semibold">Supervision Requests</h2>
+        <div className="flex flex-wrap gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search student or title..."
+              className="pl-9 pr-4 py-2 rounded-lg border text-sm"
+            />
+          </div>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 rounded-lg border text-sm"
+          >
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
       <div className="bg-card rounded-xl border overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -68,7 +100,7 @@ export default function SupervisionRequests() {
             </tr>
           </thead>
           <tbody>
-            {requests.map((r) => (
+            {filtered.map((r) => (
               <tr key={r.id} className="border-t">
                 <td className="p-4">
                   <p className="font-medium">{r.student?.name}</p>
@@ -101,6 +133,9 @@ export default function SupervisionRequests() {
             ))}
           </tbody>
         </table>
+        {filtered.length === 0 && (
+          <p className="text-center text-sm text-gray-500 py-8">No requests match your search.</p>
+        )}
       </div>
 
       {rejectModal && (

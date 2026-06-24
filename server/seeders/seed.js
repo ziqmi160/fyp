@@ -1,6 +1,17 @@
 import bcrypt from 'bcryptjs';
-import { User, StudentProfile, SupervisorProfile, SupervisionRequest } from '../models/index.js';
+import { User, StudentProfile, SupervisorProfile, SupervisionRequest, Class, Task } from '../models/index.js';
 import { recomputeSupervisorEmbedding } from '../services/embeddingService.js';
+
+const CSP600_TASKS = [
+  { title: 'Chapter 1 Submission', description: 'Submit your Chapter 1 document.', order_index: 1 },
+  { title: 'Chapter 2 Submission', description: 'Submit your Chapter 2 document.', order_index: 2 },
+  { title: 'Chapter 3 Submission', description: 'Submit your Chapter 3 document.', order_index: 3 },
+  { title: 'Final Proposal Report', description: 'Submit your complete final proposal report.', order_index: 4 },
+];
+
+const CSP650_TASKS = [
+  { title: 'Final Report Submission', description: 'Submit your complete final project report.', order_index: 1 },
+];
 
 const hashedPassword = bcrypt.hashSync('password123', 10);
 
@@ -120,6 +131,8 @@ const studentData = [
 async function seed() {
   try {
     console.log('Clearing existing data...');
+    await Task.destroy({ where: {} });
+    await Class.destroy({ where: {} });
     await User.destroy({ where: {}, force: true });
 
     // ---- core accounts ----
@@ -129,6 +142,17 @@ async function seed() {
       { name: 'Dr. Coordinator CSP600', email: 'coordinator600@fyp.com', password: hashedPassword, role: 'coordinator', is_active: true, coordinator_phase: 'CSP600' },
       { name: 'Dr. Coordinator CSP650', email: 'coordinator650@fyp.com', password: hashedPassword, role: 'coordinator', is_active: true, coordinator_phase: 'CSP650' },
     ]);
+
+    // ---- classes and default tasks ----
+    console.log('Creating classes and default tasks...');
+    const class600 = await Class.create({ name: '2305A', phase: 'CSP600', coordinator_id: coord600.id, academic_year: '2024/2025 Sem 3', is_active: true });
+    const class650 = await Class.create({ name: '2305B', phase: 'CSP650', coordinator_id: coord650.id, academic_year: '2024/2025 Sem 3', is_active: true });
+    for (const t of CSP600_TASKS) {
+      await Task.create({ ...t, class_id: class600.id, created_by: coord600.id, is_active: true, due_date: new Date('2026-06-30') });
+    }
+    for (const t of CSP650_TASKS) {
+      await Task.create({ ...t, class_id: class650.id, created_by: coord650.id, is_active: true, due_date: new Date('2026-06-30') });
+    }
 
     // ---- supervisors ----
     console.log('Creating supervisor accounts...');
@@ -199,10 +223,22 @@ async function seed() {
         fyp_status: status,
         project_description: s.description || null,
         current_supervisor_id: supervisorId,
+        class_id: s.phase === 'CSP650' ? class650.id : class600.id,
       };
     });
 
     await StudentProfile.bulkCreate(studentProfileRows);
+
+    // Fix supervisor current_student_count to match actual assignments
+    const supervisorCounts = {};
+    for (const row of studentProfileRows) {
+      if (row.current_supervisor_id) {
+        supervisorCounts[row.current_supervisor_id] = (supervisorCounts[row.current_supervisor_id] || 0) + 1;
+      }
+    }
+    for (const [userId, count] of Object.entries(supervisorCounts)) {
+      await SupervisorProfile.update({ current_student_count: count }, { where: { user_id: userId } });
+    }
 
     // supervision requests for no_supervisor students
     const noSupStudents = studentData

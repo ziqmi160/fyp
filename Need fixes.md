@@ -1,0 +1,9 @@
+- [x] Coordinator currently only have 1 classes. They can handle multiple classes
+- [x] Remove headings in all forms
+- [x] Supervisor need to be able to leave meeting notes
+- [x] Pdf Viewer is blurry and can be improved to look better
+- [x] Tasks doesn't need to have order field. Just sort them have the option to sort them by date created or deadline. And also the options to create new task to all classes. 
+- [x] Students I'm Examining tab in the supervisor dashboard can be removed. 
+- [x] For each tasks, if there are file submissions make the coordinator able to download them in bulk
+- [x] For forms that require multiple evaluators like F10 that has both supervisor and examiner giving marks, the coordinator only downloads one with the supervisors name. 
+- [x] Coordinator probably need to have a dedicated page to show marks of the students under them

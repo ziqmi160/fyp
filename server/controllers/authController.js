@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { User, StudentProfile, SupervisorProfile } from '../models/index.js';
+import { User, StudentProfile, SupervisorProfile, Class } from '../models/index.js';
 
 export const login = async (req, res) => {
   try {
@@ -127,6 +127,133 @@ export const register = async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+// Self-registration for usability testing: creates a single account that can
+// switch between student, supervisor and coordinator views via switchRole().
+// Starts as a student; the supervisor/coordinator profiles are provisioned
+// lazily the first time the account switches into those roles.
+export const registerMultiRole = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, error: 'Name, email and password are required.' });
+    }
+
+    const existing = await User.findOne({ where: { email: email.toLowerCase() } });
+    if (existing) {
+      return res.status(400).json({ success: false, error: 'Email already registered.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: 'student',
+      is_active: true,
+      is_multi_role: true,
+    });
+
+    await StudentProfile.create({
+      user_id: user.id,
+      student_id: `TESTER-${user.id}`,
+      programme: 'CS',
+      fyp_status: 'no_supervisor',
+    });
+
+    const token = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    res.status(201).json({
+      success: true,
+      data: {
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role, is_multi_role: true }
+      },
+      message: 'Testing account created.'
+    });
+  } catch (error) {
+    console.error('Multi-role register error:', error);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+const MULTI_ROLES = ['student', 'supervisor', 'coordinator'];
+
+export const switchRole = async (req, res) => {
+  try {
+    if (!req.user.is_multi_role) {
+      return res.status(403).json({ success: false, error: 'This account cannot switch roles.' });
+    }
+
+    const { role } = req.body;
+    if (!MULTI_ROLES.includes(role)) {
+      return res.status(400).json({ success: false, error: 'Invalid role.' });
+    }
+
+    const user = req.user;
+
+    if (role === 'student') {
+      await StudentProfile.findOrCreate({
+        where: { user_id: user.id },
+        defaults: {
+          student_id: `TESTER-${user.id}`,
+          programme: 'CS',
+          fyp_status: 'no_supervisor',
+        },
+      });
+    }
+
+    if (role === 'supervisor') {
+      await SupervisorProfile.findOrCreate({
+        where: { user_id: user.id },
+        defaults: {
+          staff_id: `TESTER-${user.id}`,
+          expertise: ['Software Engineering'],
+          max_students: 5,
+          is_accepting: true,
+        },
+      });
+    }
+
+    if (role === 'coordinator') {
+      const [testClass] = await Class.findOrCreate({
+        where: { coordinator_id: user.id },
+        defaults: {
+          name: `TESTER-${user.id}`,
+          phase: 'CSP600',
+          coordinator_id: user.id,
+          academic_year: 'Usability Testing',
+          is_active: true,
+        },
+      });
+      if (!user.coordinator_phase) {
+        await user.update({ coordinator_phase: testClass.phase });
+      }
+      // Link the account's own student identity into its own test class.
+      await StudentProfile.update(
+        { class_id: testClass.id, current_phase: testClass.phase },
+        { where: { user_id: user.id } }
+      );
+    }
+
+    await user.update({ role, approval_status: role === 'supervisor' ? 'approved' : user.approval_status });
+
+    res.json({
+      success: true,
+      data: { user: { id: user.id, name: user.name, email: user.email, role, is_multi_role: true } },
+      message: `Switched to ${role} view.`
+    });
+  } catch (error) {
+    console.error('Switch role error:', error);
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };

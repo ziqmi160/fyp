@@ -63,6 +63,10 @@ const CATEGORY_DESCRIPTIONS = {
 let _pipeline = null;
 let _categoryEmbeddings = null;
 
+// Cache of direct expertise embeddings, keyed by supervisor id.
+// Each entry stores { text, vec } so a changed expertise string self-invalidates.
+const _supervisorEmbeddingCache = new Map();
+
 async function getPipeline() {
   if (!_pipeline) {
     _pipeline = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
@@ -92,17 +96,47 @@ async function getCategoryEmbeddings() {
   return _categoryEmbeddings;
 }
 
+// Embed a supervisor's expertise tags as a single text string for direct
+// query-to-supervisor similarity. Cached per supervisor; recomputed only when
+// the expertise text changes.
+async function getSupervisorExpertiseVec(supervisor) {
+  const tags = Array.isArray(supervisor.expertise) ? supervisor.expertise : [];
+  const text = tags.join(', ');
+  if (!text) return null;
+
+  const cached = _supervisorEmbeddingCache.get(supervisor.id);
+  if (cached && cached.text === text) return cached.vec;
+
+  const vec = await embed(text);
+  _supervisorEmbeddingCache.set(supervisor.id, { text, vec });
+  return vec;
+}
+
+/**
+ * Drop a supervisor's cached expertise embedding (e.g. after they edit their
+ * expertise). Call with no argument to clear the entire cache.
+ */
+export function clearSupervisorEmbeddingCache(supervisorId) {
+  if (supervisorId == null) {
+    _supervisorEmbeddingCache.clear();
+  } else {
+    _supervisorEmbeddingCache.delete(supervisorId);
+  }
+}
+
 /**
  * Recommend supervisors for a project description.
  *
- * Algorithm mirrors the Python RecommendationEngine:
- *   1. Embed the query against pre-computed rich category description embeddings.
- *   2. For each supervisor, score their best-matching expertise category (primary)
- *      plus a weighted average of remaining categories (secondary tie-breaker).
- *   3. final_score = primary + 0.1 × secondary_mean
+ * Hybrid scoring blends two signals (both cosine similarities, since all vectors
+ * are normalised so dot product = cosine):
+ *   1. Category score — query vs. the 10 rich expertise-category descriptions,
+ *      taking the supervisor's best-matching category (primary) plus a weighted
+ *      average of their remaining categories: primary + 0.25 × secondary_mean.
+ *   2. Direct score — query vs. the supervisor's own expertise text directly.
+ *   final_score = 0.55 × category_score + 0.45 × direct_score
  *
- * @param {string} query - The project description (or "title. description").
- * @param {Array}  supervisors - Objects with at least { expertise: string[] }.
+ * @param {string} query - The project query ("title. description").
+ * @param {Array}  supervisors - Objects with at least { id, expertise: string[] }.
  * @param {number} topN
  */
 export async function recommendSupervisors(query, supervisors, topN = 3) {
@@ -115,11 +149,11 @@ export async function recommendSupervisors(query, supervisors, topN = 3) {
     categoryScores[cat] = dot(queryVec, catEmbeddings[cat]);
   }
 
-  const scored = supervisors.map(supervisor => {
+  const scored = await Promise.all(supervisors.map(async supervisor => {
     const tags = Array.isArray(supervisor.expertise) ? supervisor.expertise : [];
 
     if (tags.length === 0) {
-      return { ...supervisor, match_score: 0, matched_expertise: null };
+      return { ...supervisor, match_score: 0, matched_expertise: null, matched_tags: [] };
     }
 
     const tagScores = tags
@@ -133,14 +167,28 @@ export async function recommendSupervisors(query, supervisors, topN = 3) {
         ? tagScores.slice(1).reduce((s, t) => s + t.score, 0) / (tagScores.length - 1)
         : 0;
 
-    const finalScore = primaryScore + 0.1 * secondaryMean;
+    // Tags responsible for the match: always the best, plus any other tag scoring
+    // within 55% of it. Relative-to-best so it adapts to each query's strength.
+    const matchedTags = tagScores
+      .filter((t, i) => i === 0 || t.score >= 0.55 * primaryScore)
+      .map(t => t.tag);
+
+    // Signal 1: taxonomy reasoning — best category, rewarding breadth of relevant areas.
+    const categoryScore = primaryScore + 0.25 * secondaryMean;
+
+    // Signal 2: direct text similarity between the query and the supervisor's expertise.
+    const expertiseVec = await getSupervisorExpertiseVec(supervisor);
+    const directScore = expertiseVec ? dot(queryVec, expertiseVec) : 0;
+
+    const finalScore = 0.55 * categoryScore + 0.45 * directScore;
 
     return {
       ...supervisor,
       match_score: Math.round(finalScore * 10000) / 10000,
       matched_expertise: bestCategory,
+      matched_tags: matchedTags,
     };
-  });
+  }));
 
   return scored.sort((a, b) => b.match_score - a.match_score).slice(0, topN);
 }

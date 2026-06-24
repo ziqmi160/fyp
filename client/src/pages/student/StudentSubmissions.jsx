@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import StatusBadge from '../../components/common/StatusBadge';
 import EmptyState from '../../components/common/EmptyState';
 import { FileText, Plus, ExternalLink, Download, Eye, X } from 'lucide-react';
-import FileViewer from 'react-file-viewer';
+import FilePreview from '../../components/common/FilePreview';
 
 const schema = z.object({
   title: z.string().min(1, 'Title required'),
@@ -190,10 +190,9 @@ export default function StudentSubmissions() {
             </div>
             <div className="flex-1 overflow-auto bg-gray-100 flex relative items-center justify-center">
               <div className="w-full h-full max-h-full overflow-auto">
-                <FileViewer
-                  fileType={previewFile.file_path.split('.').pop().toLowerCase()}
+                <FilePreview
                   filePath={`/uploads/${previewFile.file_path}`}
-                  onError={(e) => console.error('Error viewing file:', e)}
+                  fileName={previewFile.file_name}
                 />
               </div>
             </div>

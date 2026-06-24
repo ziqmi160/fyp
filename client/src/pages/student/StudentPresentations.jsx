@@ -14,7 +14,7 @@ function PresentationsTab() {
     queryKey: ['student-presentations'],
     queryFn: async () => {
       const { data } = await api.get('/presentation-sessions/my-slots');
-      return data || [];
+      return data.data || [];
     },
   });
 

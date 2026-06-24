@@ -55,14 +55,6 @@ const StudentProfile = sequelize.define('StudentProfile', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  title_status: {
-    type: DataTypes.ENUM('not_submitted', 'pending', 'approved', 'rejected'),
-    defaultValue: 'not_submitted'
-  },
-  title_feedback: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  }
 }, {
   tableName: 'student_profiles',
   timestamps: true,
