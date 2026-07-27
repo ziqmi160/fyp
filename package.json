@@ -10,6 +10,7 @@
     "db:sync": "node server/config/syncDb.js",
     "db:seed": "node server/seeders/seed.js",
     "db:seed-rubrics": "node server/seeders/seedRubrics.js",
+    "db:seed-expertise": "node server/seeders/seedSupervisorExpertise.js",
     "build": "npm run build --prefix client"
   },
   "dependencies": {

@@ -2,7 +2,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Op } from 'sequelize';
 import {
-  EvaluationForm, RubricTemplate, User, StudentProfile, ExaminerAssignment, Class
+  EvaluationForm, RubricTemplate, User, StudentProfile, ExaminerAssignment, Class,
+  Task, Submission, SubmissionAttachment
 } from '../models/index.js';
 import { generateEvalForm } from '../services/pdfService.js';
 
@@ -130,6 +131,64 @@ export const getEvaluableStudents = async (req, res) => {
     res.json({ success: true, data: students });
   } catch (e) {
     console.error(e);
+    res.status(500).json({ success: false, error: 'Server error.' });
+  }
+};
+
+// ── GET /evaluation-forms/students/:studentId/final-report ───────────────────
+// Returns the student's submission (with attachments) for their class's final
+// report task, but only if the requester is that student's supervisor/examiner.
+export const getStudentFinalReport = async (req, res) => {
+  try {
+    const studentId = parseInt(req.params.studentId, 10);
+
+    const role = await resolveEvaluatorRole(req.user.id, studentId);
+    if (!role) {
+      return res.status(403).json({ success: false, error: 'You are not authorized to view this student.' });
+    }
+
+    const profile = await StudentProfile.findOne({ where: { user_id: studentId } });
+    if (!profile?.class_id) {
+      return res.json({ success: true, data: null });
+    }
+
+    const finalReportTask = await Task.findOne({
+      where: { class_id: profile.class_id, is_final_report: true },
+      attributes: ['id', 'title'],
+    });
+    if (!finalReportTask) {
+      return res.json({ success: true, data: null });
+    }
+
+    const submission = await Submission.findOne({
+      where: { student_id: studentId, task_id: finalReportTask.id },
+      include: [SubmissionAttachment],
+      order: [['submitted_at', 'DESC']],
+    });
+    if (!submission) {
+      return res.json({ success: true, data: null });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        task_title: finalReportTask.title,
+        submission: {
+          id: submission.id,
+          title: submission.title,
+          status: submission.status,
+          submitted_at: submission.submitted_at,
+          external_link: submission.external_link,
+          attachments: (submission.SubmissionAttachments || []).map(a => ({
+            id: a.id,
+            file_name: a.file_name,
+            file_path: a.file_path,
+          })),
+        },
+      },
+    });
+  } catch (e) {
+    console.error('Get student final report error:', e);
     res.status(500).json({ success: false, error: 'Server error.' });
   }
 };

@@ -69,14 +69,14 @@ export default function LoginPage() {
               {isSubmitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-          <p className="text-center text-sm text-gray-500 mt-5">
+          {/* <p className="text-center text-sm text-gray-500 mt-5">
             Don&apos;t have an account?{' '}
             <Link to="/register" className="text-primary font-medium hover:underline">Register</Link>
-          </p>
-          <p className="text-center text-xs text-amber-600 mt-3 bg-amber-50 rounded-lg px-3 py-2">
+          </p> */}
+          {/* <p className="text-center text-xs text-amber-600 mt-3 bg-amber-50 rounded-lg px-3 py-2">
             Usability testing?{' '}
             <Link to="/register-testing" className="font-semibold underline hover:text-amber-700">Create a test account</Link>
-          </p>
+          </p> */}
         </div>
       </div>
     </div>

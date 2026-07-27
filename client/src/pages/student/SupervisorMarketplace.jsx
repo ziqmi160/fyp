@@ -30,6 +30,7 @@ export default function SupervisorMarketplace() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [availableOnly, setAvailableOnly] = useState(true);
+  const [expertiseFilter, setExpertiseFilter] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDescModal, setShowDescModal] = useState(false);
@@ -83,9 +84,16 @@ export default function SupervisorMarketplace() {
     onError: (err) => toast.error(err.response?.data?.error || 'Failed to send'),
   });
 
+  // Unique expertise tags across all supervisors, for the filter dropdown.
+  const expertiseOptions = [...new Set(
+    supervisors.flatMap(s => (Array.isArray(s.expertise) ? s.expertise : []))
+  )].sort((a, b) => a.localeCompare(b));
+
   const filtered = supervisors.filter(s => {
+    const expertiseArr = Array.isArray(s.expertise) ? s.expertise : [];
+    if (expertiseFilter && !expertiseArr.includes(expertiseFilter)) return false;
     if (!search) return true;
-    const expertiseText = Array.isArray(s.expertise) ? s.expertise.join(' ') : (s.expertise || '');
+    const expertiseText = expertiseArr.join(' ');
     return (s.name || '').toLowerCase().includes(search.toLowerCase()) ||
       expertiseText.toLowerCase().includes(search.toLowerCase());
   });
@@ -140,7 +148,17 @@ export default function SupervisorMarketplace() {
             className="w-full pl-10 pr-4 py-2 rounded-lg border"
           />
         </div>
-        <label className="flex items-center gap-2 text-sm">
+        <select
+          value={expertiseFilter}
+          onChange={(e) => setExpertiseFilter(e.target.value)}
+          className="px-3 py-2 rounded-lg border bg-white text-sm sm:w-56"
+        >
+          <option value="">All expertise</option>
+          {expertiseOptions.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+        <label className="flex items-center gap-2 text-sm whitespace-nowrap">
           <input type="checkbox" checked={availableOnly} onChange={(e) => setAvailableOnly(e.target.checked)} />
           Available only
         </label>
@@ -306,7 +324,7 @@ function SupervisorCard({ supervisor: sup, canRequest, isTestingRestricted, onRe
       </div>
       <div className="mt-2 flex flex-wrap gap-1">
         {expertise.map((e, i) => (
-          <span key={i} className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary">{e}</span>
+          <span key={i} className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary break-words">{e}</span>
         ))}
         {expertise.length === 0 && <span className="text-xs text-gray-400">No expertise listed</span>}
       </div>

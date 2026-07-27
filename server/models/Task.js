@@ -44,6 +44,12 @@ const Task = sequelize.define('Task', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
+  is_final_report: {
+    // Marks this task as the class's final report. When a student submits to it,
+    // their supervisor and examiner(s) can view the report from the Evaluation page.
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
   is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true

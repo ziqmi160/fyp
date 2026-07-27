@@ -395,8 +395,15 @@ function MeetingFormModal({ title, initial, students, onClose, onSubmit, loading
     agenda: initial?.agenda || '',
   });
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (form.meeting_date && form.meeting_time &&
+        new Date(`${form.meeting_date}T${form.meeting_time}`) < new Date()) {
+      toast.error('Meetings cannot be scheduled in the past.');
+      return;
+    }
     onSubmit(form);
   };
 
@@ -429,7 +436,7 @@ function MeetingFormModal({ title, initial, students, onClose, onSubmit, loading
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Date</label>
-              <input type="date" value={form.meeting_date} onChange={(e) => setForm({ ...form, meeting_date: e.target.value })} required
+              <input type="date" min={today} value={form.meeting_date} onChange={(e) => setForm({ ...form, meeting_date: e.target.value })} required
                 className="w-full px-3 py-2 rounded-lg border text-sm focus:ring-2 focus:ring-primary focus:border-transparent" />
             </div>
             <div>

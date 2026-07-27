@@ -4,6 +4,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { ZipArchive } from 'archiver';
 import { Task, Class, Submission, SubmissionAttachment, StudentProfile, User } from '../models/index.js';
+import { isPastDate } from '../utils/dateValidation.js';
 import { DEFAULT_RUBRICS } from '../constants/defaultRubrics.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -11,6 +12,14 @@ const __dirname = path.dirname(__filename);
 const UPLOADS_DIR = path.join(__dirname, '../uploads');
 
 const fileSafe = (s) => (s || 'unknown').replace(/[^a-z0-9]+/gi, '_');
+
+// Only one task per class may be the final report. Clear the flag on any other
+// task in the same class before setting it on the target task.
+const clearOtherFinalReports = async (classId, exceptTaskId = null) => {
+  const where = { class_id: classId, is_final_report: true };
+  if (exceptTaskId) where.id = { [Op.ne]: exceptTaskId };
+  await Task.update({ is_final_report: false }, { where });
+};
 
 // ── Coordinator ───────────────────────────────────────────────────────────────
 
@@ -52,10 +61,14 @@ export const getCoordinatorTasks = async (req, res) => {
 
 export const createTask = async (req, res) => {
   try {
-    const { title, description, class_id, due_date, form_type, rubric, apply_to_all } = req.body;
+    const { title, description, class_id, due_date, form_type, rubric, apply_to_all, is_final_report } = req.body;
 
     if (!title) {
       return res.status(400).json({ success: false, error: 'title is required.' });
+    }
+
+    if (isPastDate(due_date)) {
+      return res.status(400).json({ success: false, error: 'Due date cannot be in the past.' });
     }
 
     // If a form_type is given but no custom rubric, use the default
@@ -70,6 +83,7 @@ export const createTask = async (req, res) => {
       created_by: req.user.id,
       form_type: form_type || null,
       rubric: resolvedRubric,
+      is_final_report: !!is_final_report,
       is_active: true
     };
 
@@ -78,6 +92,10 @@ export const createTask = async (req, res) => {
       const classes = await Class.findAll({ where: { coordinator_id: req.user.id }, attributes: ['id'] });
       if (classes.length === 0) {
         return res.status(404).json({ success: false, error: 'You have no classes.' });
+      }
+      // Each class can only have one final report — clear any existing ones first.
+      if (baseFields.is_final_report) {
+        await Promise.all(classes.map(c => clearOtherFinalReports(c.id)));
       }
       const created = await Task.bulkCreate(
         classes.map(c => ({ ...baseFields, class_id: c.id }))
@@ -96,6 +114,10 @@ export const createTask = async (req, res) => {
     const cls = await Class.findOne({ where: { id: class_id, coordinator_id: req.user.id } });
     if (!cls) return res.status(404).json({ success: false, error: 'Class not found.' });
 
+    if (baseFields.is_final_report) {
+      await clearOtherFinalReports(class_id);
+    }
+
     const task = await Task.create({ ...baseFields, class_id });
 
     res.status(201).json({ success: true, data: task, message: 'Task created.' });
@@ -110,14 +132,29 @@ export const updateTask = async (req, res) => {
     const task = await Task.findOne({ where: { id: req.params.id, created_by: req.user.id } });
     if (!task) return res.status(404).json({ success: false, error: 'Task not found.' });
 
-    const { title, description, due_date, is_active, form_type, rubric } = req.body;
+    const { title, description, due_date, is_active, form_type, rubric, is_final_report } = req.body;
+
+    // Only reject a past due date when it's actually being changed, so editing
+    // other fields on a task whose deadline already passed still works.
+    if (due_date !== undefined && due_date !== task.due_date && isPastDate(due_date)) {
+      return res.status(400).json({ success: false, error: 'Due date cannot be in the past.' });
+    }
+
+    // Marking this task as the final report clears the flag on any other task
+    // in the same class (one final report per class).
+    if (is_final_report && !task.is_final_report) {
+      await clearOtherFinalReports(task.class_id, task.id);
+    }
 
     const updatedFormType = form_type !== undefined ? (form_type || null) : task.form_type;
     let updatedRubric = task.rubric;
     if (rubric !== undefined) {
+      // Explicit rubric (e.g. a customised one) always wins.
       updatedRubric = rubric;
-    } else if (form_type !== undefined && form_type && !task.rubric) {
-      updatedRubric = DEFAULT_RUBRICS[form_type] || null;
+    } else if (form_type !== undefined && form_type !== task.form_type) {
+      // Form type changed without a custom rubric — resync to the default
+      // for the new type (or clear it when the form type is removed).
+      updatedRubric = form_type ? (DEFAULT_RUBRICS[form_type] || null) : null;
     }
 
     await task.update({
@@ -126,7 +163,8 @@ export const updateTask = async (req, res) => {
       due_date: due_date !== undefined ? due_date : task.due_date,
       is_active: is_active ?? task.is_active,
       form_type: updatedFormType,
-      rubric: updatedRubric
+      rubric: updatedRubric,
+      is_final_report: is_final_report !== undefined ? !!is_final_report : task.is_final_report
     });
 
     res.json({ success: true, data: task, message: 'Task updated.' });

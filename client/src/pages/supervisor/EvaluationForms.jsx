@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
-import { Edit2, Trash2, FileText, PenLine, CheckCircle, Clock, Download, AlertCircle } from 'lucide-react';
+import { Edit2, Trash2, FileText, PenLine, CheckCircle, Clock, Download, AlertCircle, FileDown, Link as LinkIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const FORMS_BY_PHASE = {
@@ -16,6 +16,50 @@ const FORMS_BY_PHASE = {
 };
 
 const PRESENTATION_TYPES = ['F7', 'F9', 'F10'];
+
+// Shows a download link to the student's submitted final report, when one exists.
+function FinalReportLink({ studentId }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['final-report', studentId],
+    queryFn: async () => {
+      const { data } = await api.get(`/evaluation-forms/students/${studentId}/final-report`);
+      return data.data; // null when no final-report task or no submission
+    },
+  });
+
+  if (isLoading || !data?.submission) return null;
+
+  const { submission } = data;
+  const firstFile = submission.attachments?.[0];
+
+  return (
+    <div className="flex items-center gap-2">
+      {firstFile ? (
+        <a
+          href={`/uploads/${firstFile.file_path}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#8B0000]/10 text-[#8B0000] hover:bg-[#8B0000]/20 transition"
+          title={`${data.task_title}: ${firstFile.file_name}`}
+        >
+          <FileDown className="w-3.5 h-3.5" />
+          Final Report
+        </a>
+      ) : submission.external_link ? (
+        <a
+          href={submission.external_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#8B0000]/10 text-[#8B0000] hover:bg-[#8B0000]/20 transition"
+          title={data.task_title}
+        >
+          <LinkIcon className="w-3.5 h-3.5" />
+          Final Report
+        </a>
+      ) : null}
+    </div>
+  );
+}
 
 function StatusBadge({ status }) {
   if (status === 'submitted') return (
@@ -250,13 +294,16 @@ export default function EvaluationForms() {
                     {student.phase}
                   </span>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
-                  student.role === 'supervisor'
-                    ? 'bg-[#8B0000]/10 text-[#8B0000]'
-                    : 'bg-purple-100 text-purple-700'
-                }`}>
-                  {student.role}
-                </span>
+                <div className="flex items-center gap-2">
+                  <FinalReportLink studentId={student.id} />
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${
+                    student.role === 'supervisor'
+                      ? 'bg-[#8B0000]/10 text-[#8B0000]'
+                      : 'bg-purple-100 text-purple-700'
+                  }`}>
+                    {student.role}
+                  </span>
+                </div>
               </div>
 
               {/* Form rows */}

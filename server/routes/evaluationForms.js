@@ -5,6 +5,7 @@ import {
   getRubricTemplate,
   updateRubricTemplate,
   getEvaluableStudents,
+  getStudentFinalReport,
   getCoordinatorEvaluableStudents,
   getMyEvaluationForms,
   getStudentForms,
@@ -28,6 +29,7 @@ router.put('/templates/:formType', requireRole('coordinator'), updateRubricTempl
 
 // ── Supervisor: evaluable students + forms ────────────────────────────────────
 router.get('/students', requireRole('supervisor'), getEvaluableStudents);
+router.get('/students/:studentId/final-report', requireRole('supervisor'), getStudentFinalReport);
 router.get('/my', requireRole('supervisor'), getMyEvaluationForms);
 router.post('/', requireRole('supervisor'), upsertEvaluationForm);
 

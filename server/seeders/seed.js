@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { User, StudentProfile, SupervisorProfile, SupervisionRequest, Class, Task } from '../models/index.js';
+import { sequelize, User, StudentProfile, SupervisorProfile, SupervisionRequest, Class, Task } from '../models/index.js';
 import { recomputeSupervisorEmbedding } from '../services/embeddingService.js';
 
 const CSP600_TASKS = [
@@ -44,49 +44,53 @@ function cleanExpertise(raw, area) {
 
 // ---------- supervisor data from Excel ----------
 
+// Expertise categories are derived from UiTM Expert Portal data (Group, Area, and Specific
+// Expertise fields) and grounded in FSKM's official Center of Computing Sciences teaching
+// areas. All three Expert Portal fields were cross-referenced per supervisor; those with no
+// Expert Portal record retain a best-effort category based on department assignment.
 const supervisorData = [
-  { name: 'Azlan Bin Ismail',                        expertise: ['Machine Learning & Deep Learning', 'Web & Mobile Development', 'Data Science & Analytics'] },
-  { name: 'Marshima Binti Mohd Rosli',                expertise: ['Machine Learning & Deep Learning', 'Data Science & Analytics', 'Software Engineering'] },
-  { name: 'Noraini Binti Seman',                      expertise: ['Natural Language Processing', 'Machine Learning & Deep Learning', 'Data Science & Analytics'] },
-  { name: 'Norhaslinda Binti Kamaruddin',             expertise: ['Machine Learning & Deep Learning', 'Artificial Intelligence', 'Data Science & Analytics'] },
-  { name: 'Norizan Binti Mat Diah',                   expertise: ['Learning Technology & HCI', 'Machine Learning & Deep Learning'] },
-  { name: 'Nur Atiqah Sia Binti Abdullah',            expertise: ['Software Engineering', 'Data Science & Analytics', 'Natural Language Processing'] },
-  { name: 'Shafaf Ibrahim',                           expertise: ['Software Engineering'] },
-  { name: 'Suriyani Binti Ariffin',                   expertise: ['Cybersecurity & Cryptography'] },
-  { name: 'Hafizatul Hanin Binti Hamzah',             expertise: ['Software Engineering'] },
-  { name: 'Hana Fakhira Binti Almarzuki',             expertise: ['Software Engineering'] },
-  { name: 'Afiza Binti Ismail',                       expertise: ['Software Engineering'] },
-  { name: 'Ali Bin Seman',                            expertise: ['Artificial Intelligence', 'Data Science & Analytics'] },
-  { name: 'Haslizatul Fairuz Binti Mohamed Hanum',    expertise: ['Natural Language Processing', 'Information Systems & Database'] },
-  { name: 'Hayati Binti Abdul Rahman',                expertise: ['Learning Technology & HCI'] },
-  { name: 'Mohd Suffian Bin Sulaiman',                expertise: ['Software Engineering', 'Computer Vision & Image Processing', 'Artificial Intelligence'] },
-  { name: 'Muhammad Amir Khan',                       expertise: ['Machine Learning & Deep Learning', 'Computer Vision & Image Processing', 'Natural Language Processing', 'Data Science & Analytics'] },
-  { name: 'Muhammad Izzad Bin Ramli',                 expertise: ['Machine Learning & Deep Learning', 'Web & Mobile Development', 'Data Science & Analytics'] },
-  { name: 'Noor Latiffah Binti Adam',                 expertise: ['Information Systems & Database', 'Natural Language Processing'] },
-  { name: 'Nor Ashikin Binti Mohamad Kamal',         expertise: ['Machine Learning & Deep Learning', 'Computer Vision & Image Processing', 'Data Science & Analytics'] },
-  { name: 'Norzilah Binti Musa',                      expertise: ['Learning Technology & HCI', 'Information Systems & Database'] },
-  { name: 'Nur Farraliza Binti Mansor',               expertise: ['Software Engineering'] },
-  { name: 'Prasanna A/P Ramakrisnan',                 expertise: ['Learning Technology & HCI', 'Data Science & Analytics'] },
-  { name: 'Razulaimi Bin Razali',                     expertise: ['Machine Learning & Deep Learning', 'Software Engineering', 'Cybersecurity & Cryptography', 'Artificial Intelligence'] },
-  { name: 'Shakirah Binti Hashim',                    expertise: ['Software Engineering'] },
-  { name: 'Sharifah Binti Aliman',                    expertise: ['Information Systems & Database'] },
-  { name: 'Sharifalillah Binti Nordin',               expertise: ['Information Systems & Database'] },
-  { name: 'Siti Khatijah Nor Binti Abdul Rahim',      expertise: ['Artificial Intelligence', 'Software Engineering'] },
-  { name: 'Suzana Binti Ahmad',                       expertise: ['Information Systems & Database'] },
-  { name: 'Syed Mohd Zahid Bin Syed Zainal Ariffin', expertise: ['Computer Vision & Image Processing'] },
-  { name: 'Tajul Rosli Bin Razak',                    expertise: ['Artificial Intelligence'] },
-  { name: 'Tengku Zatul Hidayah Binti Tengku Petra',  expertise: ['Software Engineering'] },
-  { name: 'Zainura Binti Idrus',                      expertise: ['Data Science & Analytics', 'Learning Technology & HCI'] },
-  { name: 'Waheed Yasin Mohammed Abdul-Wahid',        expertise: ['Software Engineering'] },
-  { name: 'Ahmad Taufiq Bin Haji Mohamad',            expertise: ['Machine Learning & Deep Learning', 'Data Science & Analytics'] },
-  { name: 'Azizian Bin Mohd Sapawi',                  expertise: ['Information Systems & Database'] },
-  { name: 'Muhamad Ridhwan Bin Mohamad Razali',       expertise: ['Machine Learning & Deep Learning', 'Data Science & Analytics'] },
-  { name: 'Syamsulhairi Bin Yaakop',                  expertise: ['Information Systems & Database'] },
-  { name: 'Norasiah Binti Mohammaddr',                expertise: ['Natural Language Processing'] },
-  { name: 'Nurul Hijja Binti Mazlan',                 expertise: ['Learning Technology & HCI'] },
-  { name: 'Ahmad Faiz Ghazali',                       expertise: ['Software Engineering'] },
-  { name: 'Mohd Nor Hajar Hasrol Jono',               expertise: ['Software Engineering'] },
-  { name: 'Ismadi Bin Md Badarudin',                  expertise: ['Artificial Intelligence', 'Information Systems & Database'] },
+  { name: 'Azlan Bin Ismail',                                 expertise: ["Software Engineering", "Data Science & Analytics", "Machine Learning & Deep Learning"] },
+  { name: 'Marshima Binti Mohd Rosli',                        expertise: ["Software Engineering", "Machine Learning & Deep Learning", "Data Science & Analytics"] },
+  { name: 'Noraini Binti Seman',                              expertise: ["Natural Language Processing", "Machine Learning & Deep Learning", "Data Science & Analytics"] },
+  { name: 'Norhaslinda Binti Kamaruddin',                     expertise: ["Machine Learning & Deep Learning", "Natural Language Processing", "Artificial Intelligence", "Data Science & Analytics"] },
+  { name: 'Norizan Binti Mat Diah',                           expertise: ["Learning Technology & HCI", "Machine Learning & Deep Learning"] },
+  { name: 'Nur Atiqah Sia Binti Abdullah',                    expertise: ["Software Engineering", "Data Science & Analytics", "Natural Language Processing"] },
+  { name: 'Shafaf Ibrahim',                                   expertise: ["Software Engineering"] },
+  { name: 'Suriyani Binti Ariffin',                           expertise: ["Cybersecurity & Cryptography"] },
+  { name: 'Hafizatul Hanin Binti Hamzah',                     expertise: ["Software Engineering"] },
+  { name: 'Hana Fakhira Binti Almarzuki',                     expertise: ["Software Engineering"] },
+  { name: 'Afiza Binti Ismail',                               expertise: ["Software Engineering"] },
+  { name: 'Ali Bin Seman',                                    expertise: ["Artificial Intelligence", "Data Science & Analytics"] },
+  { name: 'Haslizatul Fairuz Binti Mohamed Hanum',            expertise: ["Natural Language Processing", "Information Systems & Database"] },
+  { name: 'Hayati Binti Abdul Rahman',                        expertise: ["Learning Technology & HCI"] },
+  { name: 'Mohd Suffian Bin Sulaiman',                        expertise: ["Software Engineering", "Artificial Intelligence", "Computer Vision & Image Processing"] },
+  { name: 'Muhammad Amir Khan',                               expertise: ["Machine Learning & Deep Learning", "Computer Vision & Image Processing", "Natural Language Processing", "Data Science & Analytics"] },
+  { name: 'Muhammad Izzad Bin Ramli',                         expertise: ["Machine Learning & Deep Learning", "Web & Mobile Development"] },
+  { name: 'Noor Latiffah Binti Adam',                         expertise: ["Information Systems & Database", "Natural Language Processing"] },
+  { name: 'Nor Ashikin Binti Mohamad Kamal',                  expertise: ["Machine Learning & Deep Learning", "Computer Vision & Image Processing", "Data Science & Analytics"] },
+  { name: 'Norzilah Binti Musa',                              expertise: ["Web & Mobile Development", "Learning Technology & HCI"] },
+  { name: 'Nur Farraliza Binti Mansor',                       expertise: ["Software Engineering"] },
+  { name: 'Prasanna A/P Ramakrisnan',                         expertise: ["Learning Technology & HCI", "Data Science & Analytics"] },
+  { name: 'Razulaimi Bin Razali',                             expertise: ["Machine Learning & Deep Learning", "Software Engineering", "Artificial Intelligence"] },
+  { name: 'Shakirah Binti Hashim',                            expertise: ["Software Engineering"] },
+  { name: 'Sharifah Binti Aliman',                            expertise: ["Information Systems & Database"] },
+  { name: 'Sharifalillah Binti Nordin',                       expertise: ["Information Systems & Database"] },
+  { name: 'Siti Khatijah Nor Binti Abdul Rahim',              expertise: ["Artificial Intelligence", "Software Engineering"] },
+  { name: 'Suzana Binti Ahmad',                               expertise: ["Information Systems & Database"] },
+  { name: 'Syed Mohd Zahid Bin Syed Zainal Ariffin',          expertise: ["Computer Vision & Image Processing"] },
+  { name: 'Tajul Rosli Bin Razak',                            expertise: ["Artificial Intelligence"] },
+  { name: 'Tengku Zatul Hidayah Binti Tengku Petra',          expertise: ["Software Engineering"] },
+  { name: 'Zainura Binti Idrus',                              expertise: ["Learning Technology & HCI", "Data Science & Analytics"] },
+  { name: 'Waheed Yasin Mohammed Abdul-Wahid',                expertise: ["Software Engineering"] },
+  { name: 'Ahmad Taufiq Bin Haji Mohamad',                    expertise: ["Machine Learning & Deep Learning", "Data Science & Analytics"] },
+  { name: 'Azizian Bin Mohd Sapawi',                          expertise: ["Information Systems & Database"] },
+  { name: 'Muhamad Ridhwan Bin Mohamad Razali',               expertise: ["Machine Learning & Deep Learning", "Data Science & Analytics"] },
+  { name: 'Syamsulhairi Bin Yaakop',                          expertise: ["Information Systems & Database"] },
+  { name: 'Norasiah Binti Mohammaddr',                        expertise: ["Natural Language Processing"] },
+  { name: 'Nurul Hijja Binti Mazlan',                         expertise: ["Learning Technology & HCI", "Artificial Intelligence"] },
+  { name: 'Ahmad Faiz Ghazali',                               expertise: ["Software Engineering"] },
+  { name: 'Mohd Nor Hajar Hasrol Jono',                       expertise: ["Software Engineering"] },
+  { name: 'Ismadi Bin Md Badarudin',                          expertise: ["Artificial Intelligence", "Information Systems & Database"] },
 ];
 
 // ---------- student data ----------
@@ -131,9 +135,17 @@ const studentData = [
 async function seed() {
   try {
     console.log('Clearing existing data...');
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    // Clear profiles/requests too, otherwise rows orphaned by the user wipe
+    // collide with the freshly bulk-created ones (duplicate emails/matrics) and
+    // leave the DB in a broken half-seeded state.
+    await SupervisionRequest.destroy({ where: {} });
+    await StudentProfile.destroy({ where: {} });
+    await SupervisorProfile.destroy({ where: {} });
     await Task.destroy({ where: {} });
     await Class.destroy({ where: {} });
     await User.destroy({ where: {}, force: true });
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
 
     // ---- core accounts ----
     console.log('Creating core accounts...');

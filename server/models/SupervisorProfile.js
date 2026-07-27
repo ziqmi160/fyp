@@ -30,6 +30,20 @@ const SupervisorProfile = sequelize.define('SupervisorProfile', {
       this.setDataValue('expertise', JSON.stringify(val ?? []));
     }
   },
+  // Specific research topics (e.g. "Reinforcement Learning, Cloud Computing"),
+  // a finer-grained signal than the broad expertise categories.
+  specific_expertise: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('specific_expertise');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch { return []; }
+    },
+    set(val) {
+      this.setDataValue('specific_expertise', JSON.stringify(val ?? []));
+    }
+  },
   expertise_embedding: {
     type: DataTypes.TEXT,
     allowNull: true

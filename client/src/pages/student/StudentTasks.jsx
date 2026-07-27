@@ -11,6 +11,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 export default function StudentTasks() {
   const [submittingTask, setSubmittingTask] = useState(null);
   const [expandedTask, setExpandedTask] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all'); // all | submitted | pending | overdue
   const qc = useQueryClient();
 
   const { data: profile } = useQuery({
@@ -34,11 +35,35 @@ export default function StudentTasks() {
 
   const now = new Date();
 
+  const filteredTasks = tasks.filter((task) => {
+    const submitted = !!task.my_submission;
+    const due = task.due_date ? new Date(task.due_date) : null;
+    const isOverdue = !submitted && due && due < now;
+    if (statusFilter === 'submitted') return submitted;
+    if (statusFilter === 'pending') return !submitted;
+    if (statusFilter === 'overdue') return isOverdue;
+    return true;
+  });
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold">My Tasks</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Tasks assigned by your coordinator</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold">My Tasks</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Tasks assigned by your coordinator</p>
+        </div>
+        {tasks.length > 0 && (
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-3 py-2 rounded-lg border bg-white text-sm sm:w-44"
+          >
+            <option value="all">All tasks</option>
+            <option value="pending">Not submitted</option>
+            <option value="submitted">Submitted</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        )}
       </div>
 
       {!hasClass && (
@@ -63,9 +88,14 @@ export default function StudentTasks() {
           <p className="font-medium">No tasks assigned yet</p>
           <p className="text-sm mt-1">Your coordinator hasn&apos;t created any tasks for your class.</p>
         </div>
+      ) : filteredTasks.length === 0 && hasClass ? (
+        <div className="bg-card rounded-xl border p-12 text-center text-gray-500">
+          <ClipboardList className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+          <p className="font-medium">No tasks match this filter</p>
+        </div>
       ) : (
         <div className="space-y-3">
-          {tasks.map((task) => {
+          {filteredTasks.map((task) => {
             const due = task.due_date ? new Date(task.due_date) : null;
             const isOverdue = due && due < now;
             const isDueSoon = due && !isOverdue && (due - now) < 3 * 24 * 60 * 60 * 1000;

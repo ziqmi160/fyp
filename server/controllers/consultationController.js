@@ -1,5 +1,6 @@
 import { ConsultationMeeting, User, StudentProfile } from '../models/index.js';
 import { Op } from 'sequelize';
+import { isPastDateTime } from '../utils/dateValidation.js';
 
 export const getConsultationMeetings = async (req, res) => {
   try {
@@ -54,8 +55,12 @@ export const createConsultationMeeting = async (req, res) => {
       venue, 
       meeting_type, 
       agenda, 
-      phase 
+      phase
     } = req.body;
+
+    if (isPastDateTime(meeting_date, start_time)) {
+      return res.status(400).json({ message: 'Meetings cannot be scheduled in the past' });
+    }
 
     // Verify supervisor-student relationship
     const studentProfile = await StudentProfile.findOne({
@@ -128,6 +133,15 @@ export const updateConsultationMeeting = async (req, res) => {
     }
     if (req.user.role === 'supervisor' && meeting.supervisor_id !== req.user.id) {
       return res.status(403).json({ message: 'You can only update meetings you supervise' });
+    }
+
+    // Only block past dates when the meeting is actually being (re)scheduled,
+    // not when it's being marked completed/cancelled or only notes change.
+    const isReschedule =
+      status !== 'completed' && status !== 'cancelled' &&
+      (meeting_date !== meeting.meeting_date || start_time !== meeting.start_time);
+    if (isReschedule && isPastDateTime(meeting_date, start_time)) {
+      return res.status(400).json({ message: 'Meetings cannot be rescheduled to a past date' });
     }
 
     await meeting.update({

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { MeetingLog, StudentProfile, SupervisorProfile, User, Class } from '../models/index.js';
 import { createNotification } from './notificationController.js';
 import { generateF5Form } from '../services/pdfService.js';
+import { isPastDateTime } from '../utils/dateValidation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,6 +12,10 @@ const __dirname = path.dirname(__filename);
 export const createMeeting = async (req, res) => {
   try {
     const { student_id, meeting_date, meeting_time, location, agenda } = req.body;
+
+    if (isPastDateTime(meeting_date, meeting_time)) {
+      return res.status(400).json({ success: false, error: 'Meetings cannot be scheduled in the past.' });
+    }
 
     let studentId, supervisorId;
     if (req.user.role === 'student') {
@@ -125,6 +130,11 @@ export const updateMeeting = async (req, res) => {
 
     // Both roles can reschedule while the meeting is still scheduled
     if (meeting.status === 'scheduled') {
+      const newDate = meeting_date !== undefined ? meeting_date : meeting.meeting_date;
+      const newTime = meeting_time !== undefined ? meeting_time : meeting.meeting_time;
+      if ((meeting_date !== undefined || meeting_time !== undefined) && isPastDateTime(newDate, newTime)) {
+        return res.status(400).json({ success: false, error: 'Meetings cannot be rescheduled to a past date.' });
+      }
       if (meeting_date !== undefined) updates.meeting_date = meeting_date;
       if (meeting_time !== undefined) updates.meeting_time = meeting_time;
       if (location !== undefined) updates.location = location;

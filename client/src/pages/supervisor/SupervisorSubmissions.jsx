@@ -9,6 +9,7 @@ import FilePreview from '../../components/common/FilePreview';
 
 export default function SupervisorSubmissions() {
   const [activeTab, setActiveTab] = useState('supervisees');
+  const [statusFilter, setStatusFilter] = useState('');
   const [selected, setSelected] = useState(null);
   const [feedback, setFeedback] = useState('');
   const [status, setStatus] = useState('approved');
@@ -95,7 +96,8 @@ export default function SupervisorSubmissions() {
     reviewMutation.mutate({ id: selected.id, supervisor_feedback: feedback, status });
   };
 
-  const displayList = activeTab === 'supervisees' ? submissions : examining;
+  const baseList = activeTab === 'supervisees' ? submissions : examining;
+  const displayList = statusFilter ? baseList.filter((s) => s.status === statusFilter) : baseList;
 
   return (
     <div className="space-y-6">
@@ -121,9 +123,24 @@ export default function SupervisorSubmissions() {
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-500">Status:</span>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setSelected(null); }}
+          className="px-3 py-1.5 rounded-lg border bg-white text-sm"
+        >
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="approved">Approved</option>
+          <option value="revision_required">Revision Required</option>
+        </select>
+      </div>
+
       {displayList.length === 0 ? (
         <div className="bg-card rounded-xl p-8 border">
-          <EmptyState icon={FileText} message={activeTab === 'supervisees' ? "No pending submissions to review" : "No examination reports received yet"} />
+          <EmptyState icon={FileText} message={baseList.length === 0 ? (activeTab === 'supervisees' ? "No pending submissions to review" : "No examination reports received yet") : "No submissions match this status"} />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

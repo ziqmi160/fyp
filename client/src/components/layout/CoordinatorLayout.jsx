@@ -17,7 +17,7 @@ const navItems = [
   { path: 'marks', label: 'Marks', icon: Award },
   { path: 'student-documents', label: 'Student Documents', icon: FolderDown },
   { path: 'rubric-templates', label: 'Rubric Templates', icon: ClipboardCheck },
-  { path: 'reports', label: 'Reports', icon: FileBarChart },
+  // { path: 'reports', label: 'Reports', icon: FileBarChart },
 ];
 
 const titles = {
@@ -34,7 +34,7 @@ const titles = {
   marks: 'Student Marks',
   'student-documents': 'Student Documents',
   'rubric-templates': 'Rubric Templates',
-  reports: 'Reports',
+  // reports: 'Reports',
   'resource-library': 'Resource Library',
   'plagiarism-checks': 'Plagiarism Checks',
   'ethical-approval': 'Ethical Approval',

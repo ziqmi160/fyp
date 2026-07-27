@@ -49,7 +49,7 @@ export default function MainLayout({ navItems, basePath, title, children }) {
         </nav>
       </aside>
 
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1 min-w-0 lg:ml-64">
         <div className="sticky top-0 z-30">
           <RoleSwitcher />
           <header className="h-16 bg-card border-b shadow-sm flex items-center justify-between px-4">

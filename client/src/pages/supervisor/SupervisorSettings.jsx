@@ -4,6 +4,7 @@ import { Save, PenLine, CheckCircle2 } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import SignaturePad from '../../components/common/SignaturePad';
+import { useAuth } from '../../store/AuthContext';
 
 const EXPERTISE_CATEGORIES = [
   'Machine Learning & Deep Learning',
@@ -20,9 +21,15 @@ const EXPERTISE_CATEGORIES = [
 
 export default function SupervisorSettings() {
   const qc = useQueryClient();
+  const { user, setUser } = useAuth();
   const [selectedExpertise, setSelectedExpertise] = useState([]);
   const [expertiseDirty, setExpertiseDirty] = useState(false);
   const [pendingSig, setPendingSig] = useState(null);  // base64 from pad, not yet saved
+  const [name, setName] = useState('');
+
+  useEffect(() => {
+    if (user?.name) setName(user.name);
+  }, [user?.name]);
 
   const { data: profile } = useQuery({
     queryKey: ['user-profile'],
@@ -38,6 +45,18 @@ export default function SupervisorSettings() {
       setSelectedExpertise(arr);
     }
   }, [profile?.expertise]);
+
+  const nameMutation = useMutation({
+    mutationFn: (newName) => api.put('/users/profile', { name: newName }),
+    onSuccess: ({ data }) => {
+      toast.success('Name updated.');
+      if (data.data?.user) setUser(data.data.user);
+      qc.invalidateQueries(['user-profile']);
+    },
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to update name'),
+  });
+
+  const nameDirty = name.trim() !== '' && name.trim() !== (user?.name || '');
 
   const availabilityMutation = useMutation({
     mutationFn: (is_accepting) => api.put('/supervisors/availability', { is_accepting }),
@@ -98,6 +117,32 @@ export default function SupervisorSettings() {
   return (
     <div className="space-y-6 max-w-2xl">
       <h2 className="text-xl font-semibold">Settings</h2>
+
+      {/* Name */}
+      <div className="bg-card rounded-xl p-6 border">
+        <h3 className="font-medium">Profile</h3>
+        <p className="text-sm text-gray-500 mt-0.5">Your display name shown across the system.</p>
+        <div className="mt-4 flex items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium mb-1">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border"
+              placeholder="Enter your name"
+            />
+          </div>
+          <button
+            onClick={() => nameMutation.mutate(name.trim())}
+            disabled={!nameDirty || nameMutation.isPending}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-light disabled:opacity-50 flex-shrink-0"
+          >
+            <Save className="w-4 h-4" />
+            {nameMutation.isPending ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
 
       <div className="bg-card rounded-xl p-6 border space-y-6">
         <div className="flex justify-between items-center">
@@ -181,7 +226,7 @@ export default function SupervisorSettings() {
               My Signature
             </h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              Saved once and used to sign F5 meeting records. Draw using mouse or touch.
+              Saved once and used to sign F-Forms. Draw using mouse or touch.
             </p>
           </div>
           {sigData && !pendingSig && (

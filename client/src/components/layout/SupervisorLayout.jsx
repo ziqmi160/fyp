@@ -1,11 +1,10 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import MainLayout from './MainLayout';
-import { LayoutDashboard, Inbox, Users, FileText, Calendar, Settings, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Calendar, Settings, ClipboardList } from 'lucide-react';
 
 const navItems = [
   { path: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: 'requests', label: 'Supervision Requests', icon: Inbox },
-  { path: 'students', label: 'My Students', icon: Users },
+  { path: 'students', label: 'Student Supervision', icon: Users },
   { path: 'submissions', label: 'Submission Review', icon: FileText },
   { path: 'evaluation-forms', label: 'Evaluation', icon: ClipboardList },
   // { path: 'amendments', label: 'Amendments', icon: Edit3 },
@@ -16,8 +15,7 @@ const navItems = [
 
 const titles = {
   dashboard: 'Dashboard',
-  requests: 'Supervision Requests',
-  students: 'My Students',
+  students: 'Student Supervision',
   submissions: 'Submission Review',
   'evaluation-forms': 'Evaluation',
   amendments: 'Amendments',

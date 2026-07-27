@@ -15,8 +15,7 @@ import StudentMeetings from './pages/student/StudentMeetings';
 // import FormSubmissions from './pages/student/FormSubmissions'; // replaced by tasks page
 // import StudentPresentations from './pages/student/StudentPresentations'; // not needed
 import SupervisorDashboard from './pages/supervisor/SupervisorDashboard';
-import SupervisionRequests from './pages/supervisor/SupervisionRequests';
-import MyStudents from './pages/supervisor/MyStudents';
+import StudentSupervision from './pages/supervisor/StudentSupervision';
 import SupervisorSubmissions from './pages/supervisor/SupervisorSubmissions';
 import SupervisorMeetings from './pages/supervisor/SupervisorMeetings';
 import SupervisorSettings from './pages/supervisor/SupervisorSettings';
@@ -93,8 +92,9 @@ export default function App() {
       <Route path="/supervisor" element={<ProtectedRoute allowedRoles={['supervisor']}><SupervisorLayout /></ProtectedRoute>}>
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<SupervisorDashboard />} />
-        <Route path="requests" element={<SupervisionRequests />} />
-        <Route path="students" element={<MyStudents />} />
+        <Route path="students" element={<StudentSupervision />} />
+        {/* Legacy path redirect to merged page */}
+        <Route path="requests" element={<Navigate to="/supervisor/students" replace />} />
         <Route path="submissions" element={<SupervisorSubmissions />} />
         <Route path="meetings" element={<SupervisorMeetings />} />
         <Route path="evaluation-forms" element={<EvaluationForms />} />
